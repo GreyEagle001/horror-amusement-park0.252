@@ -339,7 +339,7 @@ function loadItems(page) {
 
             // 数据验证
             if (!Array.isArray(response.data.items)) {
-                throw new Error('返回数据格式异常：items应为数组');
+                throw new Error('返回数据格式异常：items应为数组！');
             }
 
             console.log('[HAP Debug] 响应数据:', {
