@@ -152,39 +152,78 @@ class HAP_Shock_Box {
      * 实际查询方法
      */
     protected function query_items($args) {
+        $args = [
+            'quality' => $_POST['quality'] ?? $_GET['quality'] ?? '' // 兼容GET/POST
+        ];//增加数据进入数据集
+        
+        // 添加严格验证
+        if (empty($args['quality'])) {
+            error_log("警告：未接收到quality参数，使用默认查询");
+            // 可选：返回全部物品或抛出错误
+        }
+        error_log("[参数检查] 传入的quality参数值: " . print_r($args['quality'], true));
         global $wpdb;
         
         $start_time = microtime(true);
         $where = ["1=1"];
         $params = [];
     
-        // 构建模糊搜索条件
-        if ($args['fuzzy_search'] && !empty($args['name'])) {
-            $where[] = "name LIKE %s";
-            $params[] = '%' . $wpdb->esc_like($args['name']) . '%';
-        } elseif (!empty($args['name'])) {
-            $where[] = "name = %s";
-            $params[] = $args['name'];
+        // 参数安全处理
+        $args = wp_parse_args($args, [
+            'page'        => 1,
+            'per_page'    => 20,
+            'fuzzy_search' => false,
+            'name'        => '',
+            'item_type'   => '',
+            'quality'     => '',
+            'debug_sql'   => false
+        ]);
+    
+        // 1. 名称搜索（精确/模糊二选一）
+        if (!empty($args['name'])) {
+            $where[] = $args['fuzzy_search'] 
+                ? "name LIKE %s" 
+                : "name = %s";
+            $params[] = $args['fuzzy_search']
+                ? '%' . $wpdb->esc_like($args['name']) . '%'
+                : $args['name'];
         }
     
-        // 添加类型过滤
+        // 2. 类型过滤
         if (!empty($args['item_type'])) {
             $where[] = "item_type = %s";
             $params[] = $args['item_type'];
         }
     
-        // 主查询（必须包含）
-        $sql = "SELECT SQL_CALC_FOUND_ROWS name, item_type 
-        FROM {$wpdb->prefix}hap_items 
-        WHERE " . implode(' AND ', $where) . "
-        ORDER BY name ASC
-        LIMIT %d, %d";
+        // 3. QUALITY 强化处理（支持多值查询）
+        if (!empty($args['quality'])) {
+            error_log('Quality filter active: ' . $args['quality']); // 确认参数到达
+            if (is_array($args['quality'])) {
+                // 多quality查询（如 ['rare', 'epic']）
+                $placeholders = implode(',', array_fill(0, count($args['quality']), '%s'));
+                $where[] = "quality IN ($placeholders)";
+                $params = array_merge($params, $args['quality']);
+            } else {
+                // 单quality查询
+                $where[] = "quality = %s";
+                $params[] = $args['quality'];
+            }
+        }
+    
+        // 主查询
+        $sql = "SELECT SQL_CALC_FOUND_ROWS name, item_type, quality
+                FROM {$wpdb->prefix}hap_items 
+                WHERE " . implode(' AND ', $where) . "
+                ORDER BY name ASC
+                LIMIT %d, %d";
         
-        $params[] = ($args['page'] - 1) * $args['per_page'];
-        $params[] = $args['per_page'];
+        // 分页参数（最后追加）
+        $params[] = max(0, ($args['page'] - 1) * $args['per_page']);
+        $params[] = max(1, $args['per_page']);
     
         // 执行查询
         $items = $wpdb->get_results($wpdb->prepare($sql, $params), ARRAY_A);
+        error_log("[SQL调试] 实际执行SQL: " . $wpdb->last_query);
         $total = $wpdb->get_var("SELECT FOUND_ROWS()");
     
         return [
@@ -192,12 +231,13 @@ class HAP_Shock_Box {
             'pagination' => [
                 'total' => (int)$total,
                 'pages' => ceil($total / $args['per_page']),
-                'page'  => $args['page']
+                'page'  => max(1, $args['page'])
             ],
             'debug_sql'   => $args['debug_sql'] ? $wpdb->last_query : null,
-            'query_time'  => (microtime(true) - $start_time) * 1000
+            'query_time'  => round((microtime(true) - $start_time) * 1000, 2)
         ];
     }
+    
     
     
 

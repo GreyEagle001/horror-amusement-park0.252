@@ -301,64 +301,69 @@ function initShockBox() {
     
         // 获取搜索参数
         const searchText = $('#hap-item-search').val().trim();
-        let itemType = $('#hap-item-type').val();
+        const itemType = $('#hap-item-type').val();
+        const itemQuality = $('#hap-item-quality').val(); // 新增品质参数
         
-        // 构造请求参数（排除空值或通配符的类型条件）
+        // 构造请求参数
         const searchParams = {
             action: 'hap_search_items',
             nonce: hap_ajax.nonce,
-            name: '生存值补充剂（小）',//searchText || '%',
-            // 仅当有具体类型时才传递参数
+            name: searchText || undefined, // 空值时传undefined
+            // 条件参数
             ...(itemType && itemType !== '*' && { item_type: itemType }),
-            
+            ...(itemQuality && itemQuality !== '*' && { quality: itemQuality }), // 新增品质条件
             debug_sql: true,
-            fuzzy_search: true
+            fuzzy_search: true,
+            page: page || 1,
+            per_page: 20 // 建议明确分页大小
         };
     
-        // 打印请求参数（格式化 + 脱敏）
-        console.groupCollapsed('[HAP Request] 发送数据库请求');
-        console.log('请求URL:', hap_ajax.ajax_url);
-        console.log('请求参数:', { 
-            ...searchParams,
-            nonce: `...${searchParams.nonce.slice(-4)}` // 脱敏显示
+        // 清理空参数
+        Object.keys(searchParams).forEach(key => {
+            if (searchParams[key] === undefined) delete searchParams[key];
         });
-        console.groupEnd();
     
-        // 缓存键（保持原逻辑）
-        const cacheKey = JSON.stringify({ ...searchParams, page: '*' });
+        // 调试日志
+        console.debug('[HAP] 请求参数:', { 
+            ...searchParams,
+            nonce: '****' + searchParams.nonce.slice(-4) 
+        });
     
-        Promise.resolve(hapCacheRequest(cacheKey, () => 
+        Promise.resolve(hapCacheRequest(JSON.stringify(searchParams), () => 
             $.post(hap_ajax.ajax_url, searchParams)
         ))
         .then(response => {
-            // 修改点1：移除对response.data的访问，直接使用response
-            if (response?.success) {
-                if (!Array.isArray(response.items)) {
-                    throw new Error('返回数据格式异常：items应为数组！');
-                }
-                renderItems(response.items);
-                
-                // 修改点2：直接使用response.pagination并提供默认值
-                renderPagination(response.pagination || { 
-                    page: 1, 
-                    pages: 1, 
-                    total: 1 
-                });
-                
-                $container.data('current-page', page);
-            } else {
-                // 修改点3：错误消息直接使用response中的字段
-                throw new Error(response.message || '后端返回失败');
+            if (!response?.success) {
+                throw new Error(response?.message || '请求失败');
             }
+            
+            // 数据校验
+            if (!Array.isArray(response.items)) {
+                throw new TypeError('items应为数组');
+            }
+    
+            // 渲染结果
+            renderItems(response.items.map(item => ({
+                ...item,
+                quality: item.quality || '普通' // 默认品质
+            })));
+    
+            // 分页处理
+            renderPagination({
+                current: response.pagination?.page || 1,
+                total: response.pagination?.total || 0,
+                pages: response.pagination?.pages || 1
+            });
         })
         .catch(error => {
-            console.error('[HAP Error] 请求异常:', error);
+            console.error('[HAP] 加载失败:', error);
             $container.html(`<div class="hap-error">${error.message}</div>`);
         })
         .finally(() => {
             $container.data('loading', false);
         });
     }
+    
     
     
     
