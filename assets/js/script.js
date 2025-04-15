@@ -293,81 +293,75 @@ function initShockBox() {
         });
     });
 
-// 加载商品列表（支持模糊查询 + 调试增强版）
-function loadItems(page) {
-    const $container = $('#hap-items-container');
-    if ($container.data('loading')) return;
-
-    $container.data('loading', true).html('<div class="hap-loading">加载中...</div>');
-
-    // 获取搜索参数
-    const searchText = $('#hap-item-search').val().trim(); // 用户输入的搜索词
-    const itemType = $('#hap-item-type').val() || 'all';   // 物品类型
-
-    // 构造请求参数（强制模糊查询逻辑）
-    const searchParams = {
-        action: 'hap_search_items',
-        nonce: hap_ajax.nonce,
-        name: searchText || '*',      // 空搜索时查询全部
-        item_type: itemType,
-        page: page,
-        debug_sql: true,              // 要求返回SQL日志
-        fuzzy_search: true            // 明确要求后端启用模糊查询
-    };
-
-    console.log('[HAP Debug] 请求参数:', { 
-        ...searchParams,
-        nonce: `...${searchParams.nonce.slice(-4)}` // 脱敏处理
-    });
-
-    // 缓存键（排除page参数以缓存同一搜索条件的不同分页）
-    const cacheKey = JSON.stringify({ ...searchParams, page: '*' });
-
-    Promise.resolve(hapCacheRequest(cacheKey, () => 
-        $.post(hap_ajax.ajax_url, searchParams)
-    ))
-    .then(response => {
-        if (response.success) {
-            // 调试信息输出
-            if (response.debug) {
-                console.groupCollapsed('[HAP SQL] 数据库查询详情');
-                console.log('执行SQL:', response.debug.sql);
-                console.log('参数:', response.debug.params);
-                console.log('耗时:', response.debug.time_ms + 'ms');
-                console.groupEnd();
+    function loadItems(page) {
+        const $container = $('#hap-items-container');
+        if ($container.data('loading')) return;
+    
+        $container.data('loading', true).html('<div class="hap-loading">加载中...</div>');
+    
+        // 获取搜索参数
+        const searchText = $('#hap-item-search').val().trim();
+        let itemType = $('#hap-item-type').val();
+        
+        // 构造请求参数（排除空值或通配符的类型条件）
+        const searchParams = {
+            action: 'hap_search_items',
+            nonce: hap_ajax.nonce,
+            name: '生存值补充剂（小）',//searchText || '%',
+            // 仅当有具体类型时才传递参数
+            ...(itemType && itemType !== '*' && { item_type: itemType }),
+            
+            debug_sql: true,
+            fuzzy_search: true
+        };
+    
+        // 打印请求参数（格式化 + 脱敏）
+        console.groupCollapsed('[HAP Request] 发送数据库请求');
+        console.log('请求URL:', hap_ajax.ajax_url);
+        console.log('请求参数:', { 
+            ...searchParams,
+            nonce: `...${searchParams.nonce.slice(-4)}` // 脱敏显示
+        });
+        console.groupEnd();
+    
+        // 缓存键（保持原逻辑）
+        const cacheKey = JSON.stringify({ ...searchParams, page: '*' });
+    
+        Promise.resolve(hapCacheRequest(cacheKey, () => 
+            $.post(hap_ajax.ajax_url, searchParams)
+        ))
+        .then(response => {
+            // 修改点1：移除对response.data的访问，直接使用response
+            if (response?.success) {
+                if (!Array.isArray(response.items)) {
+                    throw new Error('返回数据格式异常：items应为数组！');
+                }
+                renderItems(response.items);
+                
+                // 修改点2：直接使用response.pagination并提供默认值
+                renderPagination(response.pagination || { 
+                    page: 1, 
+                    pages: 1, 
+                    total: 1 
+                });
+                
+                $container.data('current-page', page);
+            } else {
+                // 修改点3：错误消息直接使用response中的字段
+                throw new Error(response.message || '后端返回失败');
             }
-
-            // 数据验证
-            if (!Array.isArray(response.data.items)) {
-                throw new Error('返回数据格式异常：items应为数组！');
-            }
-
-            console.log('[HAP Debug] 响应数据:', {
-                items_count: response.data.items.length,
-                pagination: response.data.pagination || '无分页信息'
-            });
-
-            // 渲染结果
-            renderItems(response.data.items);
-            renderPagination(response.data.pagination || { current: 1, total: 1 });
-            $container.data('current-page', page);
-        } else {
-            throw new Error(response.data || '后端返回失败');
-        }
-    })
-    .catch(error => {
-        console.error('[HAP Error] 请求异常:', error);
-        $container.html(`
-            <div class="hap-error">
-                ${error.message}<br>
-                ${searchText ? `搜索词: "${searchText}"` : ''}
-            </div>
-        `);
-    })
-    .finally(() => {
-        $container.data('loading', false);
-    });
-}
+        })
+        .catch(error => {
+            console.error('[HAP Error] 请求异常:', error);
+            $container.html(`<div class="hap-error">${error.message}</div>`);
+        })
+        .finally(() => {
+            $container.data('loading', false);
+        });
+    }
+    
+    
+    
 
 
 
@@ -481,7 +475,7 @@ function loadItems(page) {
         )
         .then(response => {
             if (response.success) {
-                renderInventory(response.data.items);
+                renderInventory(response.items);
             } else {
                 throw new Error(response.data || '加载失败');
             }

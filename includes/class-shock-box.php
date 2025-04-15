@@ -109,22 +109,97 @@ class HAP_Shock_Box {
 
     public function ajax_search_items() {
         check_ajax_referer('hap-nonce', 'nonce');
-        error_log('AJAX search items called'); // 调试信息
-
+        error_log('[HAP DEBUG] AJAX search initiated - '.current_time('mysql'));
+    
+        $request = array_map('wp_unslash', $_POST);
         $args = [
-            'search' => sanitize_text_field($_POST['search'] ?? ''),
-            'type' => sanitize_text_field($_POST['type'] ?? ''),
-            'quality' => sanitize_text_field($_POST['quality'] ?? ''),
-            'page' => absint($_POST['page'] ?? 1),
-            'per_page' => 12
+            'name'        => !empty($request['name']) ? sanitize_text_field($request['name']) : '',
+            'item_type'   => ($request['item_type'] ?? '') === '*' ? '' : sanitize_text_field($request['item_type'] ?? ''),
+            'page'        => max(1, absint($request['page'] ?? 1)),
+            'per_page'    => min(50, absint($request['per_page'] ?? 12)),
+            'debug_sql'   => filter_var($request['debug_sql'] ?? false, FILTER_VALIDATE_BOOLEAN)
         ];
-
-        ob_start();
-        $this->render_items($args);
-        $html = ob_get_clean();
-
-        wp_send_json_success(['html' => $html]);
+    
+        try {
+            $results = $this->query_items($args);
+            
+            // 结构标准化输出
+            wp_send_json([
+                'success' => true,
+                'items' => array_values($results['items'] ?? []),
+                'pagination' => $results['pagination'] ?? [
+                    'total' => 0,
+                    'pages' => 0,
+                    'page'  => $args['page']
+                ],
+                'debug' => $args['debug_sql'] ? [
+                    'sql' => $results['debug_sql'] ?? 'N/A',
+                    'time_ms' => number_format($results['query_time'] ?? 0, 2)
+                ] : null
+            ]);
+    
+        } catch (Exception $e) {
+            wp_send_json_error([
+                'message' => __('查询失败，请稍后重试', 'hap'),
+                'code'    => uniqid('HAP_ERR_')
+            ], 500);
+        }
     }
+    
+    
+    
+    /**
+     * 实际查询方法
+     */
+    protected function query_items($args) {
+        global $wpdb;
+        
+        $start_time = microtime(true);
+        $where = ["1=1"];
+        $params = [];
+    
+        // 构建模糊搜索条件
+        if ($args['fuzzy_search'] && !empty($args['name'])) {
+            $where[] = "name LIKE %s";
+            $params[] = '%' . $wpdb->esc_like($args['name']) . '%';
+        } elseif (!empty($args['name'])) {
+            $where[] = "name = %s";
+            $params[] = $args['name'];
+        }
+    
+        // 添加类型过滤
+        if (!empty($args['item_type'])) {
+            $where[] = "item_type = %s";
+            $params[] = $args['item_type'];
+        }
+    
+        // 主查询（必须包含）
+        $sql = "SELECT SQL_CALC_FOUND_ROWS name, item_type 
+        FROM {$wpdb->prefix}hap_items 
+        WHERE " . implode(' AND ', $where) . "
+        ORDER BY name ASC
+        LIMIT %d, %d";
+        
+        $params[] = ($args['page'] - 1) * $args['per_page'];
+        $params[] = $args['per_page'];
+    
+        // 执行查询
+        $items = $wpdb->get_results($wpdb->prepare($sql, $params), ARRAY_A);
+        $total = $wpdb->get_var("SELECT FOUND_ROWS()");
+    
+        return [
+            'items' => is_array($items) ? $items : [],
+            'pagination' => [
+                'total' => (int)$total,
+                'pages' => ceil($total / $args['per_page']),
+                'page'  => $args['page']
+            ],
+            'debug_sql'   => $args['debug_sql'] ? $wpdb->last_query : null,
+            'query_time'  => (microtime(true) - $start_time) * 1000
+        ];
+    }
+    
+    
 
     public function ajax_purchase_item() {
         check_ajax_referer('hap-nonce', 'nonce');
