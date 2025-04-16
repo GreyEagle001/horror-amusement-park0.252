@@ -14,12 +14,117 @@ class HAP_Shock_Box {
 
     private function __construct() {
         $this->item_manager = HAP_Item_Manager::init();
+        
+        // 短代码和AJAX钩子注册
         add_shortcode('shock_box', [$this, 'render_shock_box']);
         add_action('wp_ajax_hap_search_items', [$this, 'ajax_search_items']);
         add_action('wp_ajax_nopriv_hap_search_items', [$this, 'ajax_search_items']);
         add_action('wp_ajax_hap_purchase_item', [$this, 'ajax_purchase_item']);
         add_action('wp_ajax_nopriv_hap_purchase_item', [$this, 'ajax_purchase_item']);
+        
+        // 修正后的详情钩子（移除init检查）
+        add_action('wp_ajax_hap_get_full_details', [$this, 'handle_full_details']);
+        add_action('wp_ajax_nopriv_hap_get_full_details', [$this, 'handle_full_details']);
     }
+
+    public function handle_full_details() {
+        try {
+            // 1. 安全验证
+            if (!check_ajax_referer('hap-nonce', 'nonce', false)) {
+                throw new RuntimeException('Invalid security nonce', 403);
+            }
+    
+            // 2. 获取请求参数
+            $requested_fields = isset($_POST['fields']) 
+                ? explode(',', sanitize_text_field($_POST['fields']))
+                : null; // null表示返回全部字段
+    
+            $items = array_map(function($item) {
+                return [
+                    'name'      => sanitize_text_field($item['name'] ?? ''),
+                    'item_type' => $this->validate_enum($item['item_type'] ?? '', ['consumable', 'equipment', 'material']),
+                    'quality'   => $this->validate_enum($item['quality'] ?? '', ['common', 'uncommon', 'rare', 'epic', 'legendary'])
+                ];
+            }, $_POST['items'] ?? []);
+    
+            if (empty($items)) {
+                throw new InvalidArgumentException('No items specified', 400);
+            }
+    
+            // 3. 构建动态查询
+            global $wpdb;
+            $results = [];
+            
+            foreach ($items as $item) {
+                // 3.1 基础WHERE条件
+                $where = ["name = %s"];
+                $params = [$item['name']];
+    
+                // 3.2 添加类型/品质条件（如果提供）
+                if (!empty($item['item_type'])) {
+                    $where[] = "item_type = %s";
+                    $params[] = $item['item_type'];
+                }
+                if (!empty($item['quality'])) {
+                    $where[] = "quality = %s";
+                    $params[] = $item['quality'];
+                }
+    
+                // 3.3 动态选择字段
+                $select_fields = $requested_fields 
+                    ? implode(', ', array_map('sanitize_key', $requested_fields))
+                    : 'name, item_type, attributes, quality, restrictions, effects, 
+                       value, price, currency, author, sales_count, level, 
+                       consumption, learning_requirements, created_at';
+    
+                $sql = $wpdb->prepare(
+                    "SELECT {$select_fields} 
+                     FROM {$wpdb->prefix}hap_items 
+                     WHERE " . implode(' AND ', $where),
+                    $params
+                );
+    
+                $data = $wpdb->get_row($sql, ARRAY_A);
+    
+                // 3.4 处理空值
+                if ($data) {
+                    // 转换特殊字段
+                    $data['attributes'] = $data['attributes'] ? json_decode($data['attributes'], true) : [];
+                    $data['learning_requirements'] = $data['learning_requirements'] 
+                        ? json_decode($data['learning_requirements'], true) 
+                        : [];
+                    
+                    // 保留原始数据用于调试
+                    $data['_raw_sql'] = $wpdb->last_query;
+                }
+    
+                $results[] = $data ?: ['error' => 'Item not found', 'request' => $item];
+            }
+    
+            // 4. 返回标准化响应
+            wp_send_json_success([
+                'items' => $results,
+                'meta' => [
+                    'api_version' => '2.0',
+                    'timestamp' => current_time('mysql'),
+                    'field_count' => $requested_fields ? count($requested_fields) : 'all'
+                ]
+            ]);
+    
+        } catch (Exception $e) {
+            wp_send_json_error([
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'trace' => WP_DEBUG ? $e->getTrace() : null
+            ], $e->getCode() ?: 500);
+        }
+    }
+    
+    // 辅助方法：验证枚举值
+    private function validate_enum($value, array $allowed) {
+        return in_array($value, $allowed) ? $value : $allowed[0];
+    }
+    
 
     public function render_shock_box() {
         if (!is_user_logged_in()) {
@@ -106,6 +211,45 @@ class HAP_Shock_Box {
         <?php
     }
     
+    function handle_full_item_details() {
+        check_ajax_referer('hap-nonce', 'nonce');
+    
+        $request = json_decode(file_get_contents('php://input'), true);
+        $items = $request['items'] ?? [];
+    
+        if (empty($items)) {
+            wp_send_json_error(['message' => 'Empty items array']);
+        }
+    
+        global $wpdb;
+        $results = [];
+    
+        foreach ($items as $item) {
+            // 构建动态WHERE条件
+            $where = ["name = %s"];
+            $params = [$item['name']];
+    
+            if (!empty($item['item_type'])) {
+                $where[] = "item_type = %s";
+                $params[] = $item['item_type'];
+            }
+    
+            if (!empty($item['quality'])) {
+                $where[] = "quality = %s";
+                $params[] = $item['quality'];
+            }
+    
+            $sql = $wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}hap_items 
+                 WHERE " . implode(' AND ', $where),
+                $params
+            );
+    
+            $results[] = $wpdb->get_row($sql, ARRAY_A) ?: $item;
+        }
+    
+        wp_send_json_success(['items' => $results]);
+    }
 
     public function ajax_search_items() {
         check_ajax_referer('hap-nonce', 'nonce');
