@@ -139,7 +139,7 @@ class HAP_Shock_Box {
             <div class="hap-item-filters">
                 <input type="text" id="hap-item-search" placeholder="搜索道具名称...">
                 <select id="hap-item-type">
-                    <option value="">所有类型</option>
+                    <option value="*">所有类型</option>
                     <option value="consumable">消耗道具</option>
                     <option value="permanent">永久道具</option>
                     <option value="arrow">箭矢</option>
@@ -148,7 +148,7 @@ class HAP_Shock_Box {
                     <option value="skill">法术</option>
                 </select>
                 <select id="hap-item-quality">
-                    <option value="">所有品质</option>
+                    <option value="*">所有品质</option>
                     <option value="common">普通</option>
                     <option value="uncommon">精良</option>
                     <option value="rare">稀有</option>
@@ -159,56 +159,12 @@ class HAP_Shock_Box {
             </div>
 
             <div class="hap-items-grid" id="hap-items-container">
-                <?php $this->render_items(); ?>
             </div>
 
             <div class="hap-pagination" id="hap-items-pagination"></div>
         </div>
         <?php
         return ob_get_clean();
-    }
-
-    private function render_items($args = []) {
-        // 默认显示最新上架的商品
-        if (empty($args['search']) && empty($args['type']) && empty($args['quality'])) {
-            $args['orderby'] = 'date';
-            $args['order'] = 'DESC';
-        }
-    
-        $result = $this->item_manager->search_items($args);
-    
-        if (empty($result['items'])) {
-            echo '<div class="hap-no-items">未找到符合条件的商品，请尝试其他搜索条件。</div>';
-            return;
-        }
-    
-        foreach ($result['items'] as $item) {
-            $this->render_item_card($item);
-        }
-    
-        $this->render_pagination($result);
-    }
-
-    private function render_item_card($item) {
-        $quality_class = 'hap-quality-' . esc_attr($item['quality']);
-        $currency = $item['currency'] === 'game_coin' ? '游戏币' : '技巧值';
-        ?>
-        <div class="hap-item-card <?php echo esc_attr($quality_class); ?>" data-item-id="<?php echo esc_attr($item['item_id']); ?>">
-            <div class="hap-item-header">
-                <h3><?php echo esc_html($item['name']); ?></h3>
-                <span class="hap-item-type"><?php echo esc_html($this->get_type_name($item['item_type'])); ?></span>
-            </div>
-            <div class="hap-item-body">
-                <div class="hap-item-price">
-                    <?php echo esc_html($item['price']); ?> <?php echo esc_html($currency); ?>
-                </div>
-                <div class="hap-item-quality">
-                    <?php echo esc_html($this->get_quality_name($item['quality'])); ?>
-                </div>
-                <button class="hap-buy-btn" data-item-id="<?php echo esc_attr($item['item_id']); ?>">购买</button>
-            </div>
-        </div>
-        <?php
     }
     
     function handle_full_item_details() {
@@ -259,9 +215,11 @@ class HAP_Shock_Box {
         $args = [
             'name'        => !empty($request['name']) ? sanitize_text_field($request['name']) : '',
             'item_type'   => ($request['item_type'] ?? '') === '*' ? '' : sanitize_text_field($request['item_type'] ?? ''),
+            'quality'   => ($request['quality'] ?? '') === '*' ? '' : sanitize_text_field($request['quality'] ?? ''),
             'page'        => max(1, absint($request['page'] ?? 1)),
             'per_page'    => min(50, absint($request['per_page'] ?? 12)),
-            'debug_sql'   => filter_var($request['debug_sql'] ?? false, FILTER_VALIDATE_BOOLEAN)
+            'debug_sql'   => filter_var($request['debug_sql'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'fuzzy_search' => filter_var($request['fuzzy_search'] ?? false, FILTER_VALIDATE_BOOLEAN)
         ];
     
         try {
@@ -297,15 +255,12 @@ class HAP_Shock_Box {
      */
     protected function query_items($args) {
         $args = [
-            'quality' => $_POST['quality'] ?? $_GET['quality'] ?? '' // 兼容GET/POST
-        ];//增加数据进入数据集
+            'quality' => $_POST['quality'] ?? $_GET['quality'] ?? '', // 兼容 GET/POST
+            'item_type' => $_POST['item_type'] ?? $_GET['item_type'] ?? '', // 兼容 GET/POST
+            'name' => $_POST['name'] ?? $_GET['name'] ?? '', // 兼容 GET/POST
+            'fuzzy_search' => filter_var($_POST['fuzzy_search'] ?? $_GET['fuzzy_search'] ?? false, FILTER_VALIDATE_BOOLEAN) // 兼容 GET/POST，并转换为布尔值
+        ];
         
-        // 添加严格验证
-        if (empty($args['quality'])) {
-            error_log("警告：未接收到quality参数，使用默认查询");
-            // 可选：返回全部物品或抛出错误
-        }
-        error_log("[参数检查] 传入的quality参数值: " . print_r($args['quality'], true));
         global $wpdb;
         
         $start_time = microtime(true);
@@ -325,13 +280,14 @@ class HAP_Shock_Box {
     
         // 1. 名称搜索（精确/模糊二选一）
         if (!empty($args['name'])) {
-            $where[] = $args['fuzzy_search'] 
+            $where[] = true//$args['fuzzy_search'] 
                 ? "name LIKE %s" 
                 : "name = %s";
-            $params[] = $args['fuzzy_search']
+            $params[] = true//$args['fuzzy_search']
                 ? '%' . $wpdb->esc_like($args['name']) . '%'
                 : $args['name'];
         }
+
     
         // 2. 类型过滤
         if (!empty($args['item_type'])) {

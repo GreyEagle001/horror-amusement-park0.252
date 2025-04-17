@@ -253,6 +253,9 @@ function initShockBox() {
         loadItems(1); // 点击后加载第一页搜索结果
     });
 
+    // 页面加载时触发一次 loadItems(1);
+    loadItems(1);
+
     $('#hap-item-search').on('input', () => {
         console.log('输入框内容变化'); // 调试信息
         hapDebounce('item_search', () => {
@@ -317,8 +320,11 @@ function loadItems(page) {
         item_type: $('#hap-item-type').val() !== '*' ? $('#hap-item-type').val() : undefined,
         quality: $('#hap-item-quality').val() !== '*' ? $('#hap-item-quality').val() : undefined,
         page: page,
-        per_page: 20
+        per_page: 20,
+        fuzzy_search: true // 启用模糊搜索
     };
+
+    console.log("item_type:", searchParams.item_type);
 
     // 3. 清理空参数（优化版）
     Object.keys(searchParams).forEach(key => {
@@ -379,7 +385,7 @@ async function fetchFullDetails(baseItems) {
     const formData = new FormData();
     formData.append('action', 'hap_get_full_details');
     formData.append('nonce', hap_ajax.nonce);
-    formData.append('fields', 'price,currency,effects,name,item_type,quality');
+    formData.append('fields', 'price,currency,effects,name,item_type,quality,value,restrictions,consumption,level,sales_count,created_at,attributes,learning_requirements'); // 需要的字段
 
     baseItems.forEach((item, index) => {
         formData.append(`items[${index}][name]`, item.name);
@@ -468,28 +474,19 @@ function renderFullItems(items) {
         card.innerHTML = `
             <header class="item-header">
                 <h3>${escapeHtml(item.name)}</h3>
-                <div class="meta-badges">
-                    <span class="type-badge">${getTypeName(item.item_type)}</span>
-                    <span class="quality-badge">${getQualityName(item.quality)}</span>
-                    ${item.level ? `<span class="level-badge">Lv.${item.level}</span>` : ''}
+                <div class="meta-badges">   
+                    <h3 class="type-badge">${getTypeName(item.item_type)}</h3>
+                    <h4 class="quality-badge">${getQualityName(item.quality)}</h4>
+                    ${item.level ? `<span class="level-badge">可使用等级：Lv.${item.level}</span>` : ''}
                 </div>
             </header>
             
             <!-- 2. 核心数据区块 -->
             <section class="item-core">
-                ${renderPriceSection(item)}
-                ${item.effects ? `<div class="effects">${formatEffects(item.effects)}</div>` : ''}
+                    ${item.effects ? `<div class="effects-badge">特效：${item.effects}</div>` : ''}
+                    <div class="price-badge">价格：${item.price}${getCurrencyName(item.currency)}</div>
             </section>
         `;
-
-        // // 3. 动态添加可选区块
-        // if (item.attributes?.length) {
-        //     card.appendChild(createAttributesSection(item.attributes));
-        // }
-
-        // if (item.learning_requirements) {
-        //     card.appendChild(createRequirementsSection(item.learning_requirements));
-        // }
 
         // 4. 页脚区块
         const footer = document.createElement('footer');
@@ -509,7 +506,7 @@ function renderFullItems(items) {
         // 添加创建时间
         footerContent.push(`
             <time datetime="${item.created_at}">
-                ${item.created_at}
+                上架时间：${item.created_at}
             </time>
         `);
 
@@ -545,35 +542,15 @@ function renderFullItems(items) {
     $container.append(fragment);
 }
 
-// 辅助渲染方法
-function renderPriceSection(item) {
-    const price = Number(item.price);
-    return `
-        <div class="price-section">
-            <span class="price">
-                ${price} 
-                ${getCurrencyName(item.currency)}
-            </span>
-            ${item.value ? `
-                <span class="value-ratio">
-                    (价值比: ${(item.value / item.price).toFixed(2)})
-                </span>
-            ` : ''}
-            ${item.consumption ? `
-                <span class="consumption">
-                    消耗: ${item.consumption}/次
-                </span>
-            ` : ''}
-        </div>
-    `;
-}
-
 // 其他辅助函数
 function getTypeName(type) {
     const types = {
-        consumable: '消耗品',
-        equipment: '装备',
-        material: '材料'
+        consumable: '消耗道具',
+        permanent: '永久道具',
+        arrow: '箭矢',
+        bullet: '子弹',
+        skill: '法术',
+        equipment: '装备'
     };
     return types[type] || type;
 }
@@ -590,67 +567,11 @@ function getQualityName(quality) {
 }
 function getCurrencyName(currency) {
     const currencys = {
-        游戏币: 'game_coin',
-        技巧值: 'skill_points'
+        game_coin: '游戏币',
+        skill_points: '技巧值'
     };
     return currencys[currency] || currency;
 }
-
-function formatEffects(text) {
-    return escapeHtml(text).replace(/\n/g, '<br>');
-}
-
-/**
- * 降级渲染（带警告提示）
- */
-function renderBasicItemsWithWarning(items, warning) {
-    const $container = $('#hap-items-container');
-    $container.html(`
-        <div class="hap-warning">⚠️ ${escapeHtml(warning)}</div>
-        ${items.map(item => `
-            <div class="hap-item-card basic">
-                <h4>${escapeHtml(item.name)}</h4>
-                <p>类型: ${escapeHtml(item.item_type || '未知')}</p>
-                <p>品质: ${escapeHtml(item.quality || '普通')}</p>
-            </div>
-        `).join('')}
-    `);
-}
-
-    
-    
-    
-    
-
-
-
-
-    // 渲染商品列表
-    function renderItems(items = []) {
-        const $container = $('#hap-items-container');
-        $container.empty();
-
-        if (items.length === 0) {
-            $container.html('<div class="hap-no-items">没有找到符合条件的商品</div>');
-            return;
-        }
-
-        const fragment = document.createDocumentFragment();
-
-        items.forEach(item => {
-            const itemCard = document.createElement('div');
-            itemCard.className = 'hap-item-card';
-            itemCard.innerHTML = `
-                <h4>${escapeHtml(item.name)}</h4>
-                <p>类型: ${escapeHtml(item.type)}</p>
-                <p>价格: ${escapeHtml(item.price)} ${escapeHtml(item.currency)}</p>
-                <button class="hap-buy-btn" data-item-id="${escapeHtml(item.id)}">购买</button>
-            `;
-            fragment.appendChild(itemCard);
-        });
-
-        $container.append(fragment);
-    }
 
     // 渲染分页
     function renderPagination(data) {

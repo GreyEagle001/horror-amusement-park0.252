@@ -389,10 +389,15 @@
 
 .hap-item-card h4 {
     margin-top: 0;
-    color: #ff4d4d; /* 标题保持红色 */
+    color: #fff; /* 标题保持红色 */
 }
 
 .hap-item-card h3 {
+    margin-top: 0;
+    color: #fff; /* 标题保持红色 */
+}
+
+.hap-item-card h2 {
     margin-top: 0;
     color: #fff; /* 标题保持红色 */
 }
