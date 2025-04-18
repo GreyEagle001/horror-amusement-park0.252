@@ -254,12 +254,6 @@ class HAP_Shock_Box {
      * 实际查询方法
      */
     protected function query_items($args) {
-        $args = [
-            'quality' => $_POST['quality'] ?? $_GET['quality'] ?? '', // 兼容 GET/POST
-            'item_type' => $_POST['item_type'] ?? $_GET['item_type'] ?? '', // 兼容 GET/POST
-            'name' => $_POST['name'] ?? $_GET['name'] ?? '', // 兼容 GET/POST
-            'fuzzy_search' => filter_var($_POST['fuzzy_search'] ?? $_GET['fuzzy_search'] ?? false, FILTER_VALIDATE_BOOLEAN) // 兼容 GET/POST，并转换为布尔值
-        ];
         
         global $wpdb;
         
@@ -353,16 +347,22 @@ class HAP_Shock_Box {
         }
 
         $result = $this->item_manager->purchase_item($user_id, $item_id);
-
+        error_log('result:' . $result); // 调试信息
+         error_log('完成1'); // 调试信息
         if (is_wp_error($result)) {
             wp_send_json_error(['message' => $result->get_error_message()]);
         }
-
+        error_log('完成2'); // 调试信息
         // 更新销售次数
         $this->item_manager->update_sales_count($item_id);
+        error_log('item_id为：' . $item_id); // 调试信息
+
+        error_log('完成3'); // 调试信息
 
         wp_send_json_success(['message' => '购买成功']);
     }
+
+    
 
     // 辅助方法
     private function get_type_name($type) {

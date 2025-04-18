@@ -248,21 +248,22 @@ class HAP_Item_Manager {
     
     // 购买商品
     public function purchase_item($user_id, $item_id) {
+        error_log('完成1.0'); // 调试信息
         // 验证商品存在
         $item = $this->get_item($item_id);
         if (!$item || $item->status !== 'publish') {
             return new WP_Error('invalid_item', '商品不存在或不可用');
         }
-
+        error_log('完成1.1'); // 调试信息
         // 检查用户货币是否足够 (需要实现get_user_currency)
         $user_currency = $this->get_user_currency($user_id, $item->currency);
         if ($user_currency < $item->price) {
             return new WP_Error('insufficient_funds', '货币不足');
         }
-
+        error_log('完成1.2'); // 调试信息
         // 开始事务
         $this->wpdb->query('START TRANSACTION');
-
+        error_log('完成1.3'); // 调试信息
         try {
             // 扣除用户货币 (需要实现update_user_currency)
             $this->update_user_currency(
@@ -270,7 +271,7 @@ class HAP_Item_Manager {
                 $item->currency,
                 $user_currency - $item->price
             );
-
+            
             // 添加到用户库存
             $this->wpdb->insert(
                 $this->tables['inventory'],
@@ -373,6 +374,28 @@ class HAP_Item_Manager {
         }
 
         return $result;
+    }
+
+    public function update_sales_count($item_id) {
+        global $wpdb;
+    
+        // 假设您的商品销售次数存储在一个名为 `wp_items` 的表中
+        // 并且有一个名为 `sales_count` 的字段来记录销售次数
+        $table_name = $wpdb->prefix . 'hap_items'; // 表名
+        $item_id = absint($item_id); // 确保 item_id 是一个正整数
+    
+        // 更新销售次数
+        $result = $wpdb->query($wpdb->prepare(
+            "UPDATE $table_name SET sales_count = sales_count + 1 WHERE item_id = %d",
+            $item_id
+        ));
+    
+        // 检查更新是否成功
+        if ($result === false) {
+            return new WP_Error('db_update_error', '更新销售次数失败');
+        }
+    
+        return true; // 更新成功
     }
 
     // 需要实现以下方法

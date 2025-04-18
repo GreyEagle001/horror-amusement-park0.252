@@ -42,9 +42,11 @@ spl_autoload_register(function ($class) {
 });
 
 // 确保翻译文件在 init 钩子中加载
-add_action('init', function () {
-    load_plugin_textdomain('horror-amusement-park', false, dirname(HAP_PLUGIN_BASENAME) . '/languages');
-});
+    // function load_xintheme_plugin_textdomain() {
+    //     load_plugin_textdomain( 'horror-amusement-park', false, dirname(plugin_basename(__FILE__)) . '/languages' );
+    // }
+    
+
 
 // 主插件类
 class Horror_Amusement_Park {
@@ -68,6 +70,7 @@ class Horror_Amusement_Park {
         add_action('init', [$this, 'register_post_types'], 0);
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('admin_init', [$this, 'check_requirements']);
+        //add_action( 'init', 'load_xintheme_plugin_textdomain' );
         
         // 添加性能监控
         add_action('shutdown', [$this, 'log_performance']);

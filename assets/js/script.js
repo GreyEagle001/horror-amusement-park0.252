@@ -268,6 +268,7 @@ function initShockBox() {
     $('#hap-items-container').on('click', '.hap-buy-btn', function() {
         const $btn = $(this);
         const itemId = $btn.data('item-id');
+        console.log('购买按钮被点击', itemId); // 调试信息
 
         if (!confirm('确定要购买这个商品吗？')) return;
 
@@ -324,8 +325,6 @@ function loadItems(page) {
         fuzzy_search: true // 启用模糊搜索
     };
 
-    console.log("item_type:", searchParams.item_type);
-
     // 3. 清理空参数（优化版）
     Object.keys(searchParams).forEach(key => {
         searchParams[key] === undefined && delete searchParams[key];
@@ -345,9 +344,17 @@ function loadItems(page) {
             name: item.name,
             item_type: item.item_type || null,
             quality: item.quality || null
-        }));
+        }))|| [];;
 
         // 4.3 渲染骨架屏
+        // 4.3 处理空数据情况
+        if (baseItems.length === 0) {
+            showEmptyMessage(); // 显示“暂无商品”提示
+            return; // 终止后续逻辑
+        }
+
+
+        // 4.4 渲染骨架屏
         renderSkeletonItems(baseItems);
 
         // 5. 获取详细数据
@@ -385,7 +392,7 @@ async function fetchFullDetails(baseItems) {
     const formData = new FormData();
     formData.append('action', 'hap_get_full_details');
     formData.append('nonce', hap_ajax.nonce);
-    formData.append('fields', 'price,currency,effects,name,item_type,quality,value,restrictions,consumption,level,sales_count,created_at,attributes,learning_requirements'); // 需要的字段
+    formData.append('fields', 'item_id,price,currency,effects,name,item_type,quality,value,restrictions,consumption,level,sales_count,created_at,attributes,learning_requirements'); // 需要的字段
 
     baseItems.forEach((item, index) => {
         formData.append(`items[${index}][name]`, item.name);
@@ -444,6 +451,26 @@ function renderSkeletonItems(items) {
 }
 
 /**
+ * 显示空数据提示
+ */
+function showEmptyMessage() {
+    const emptyHtml = `
+        <div class="empty-state">
+            <i class="icon-empty"></i>
+            <p>暂无对应商品</p>
+        </div>
+    `;
+    $('#hap-items-container').html(emptyHtml); // 替换容器内容
+}
+
+/**
+ * 显示错误提示
+ */
+function showError(message) {
+    $('#error-toast').text(message).fadeIn().delay(3000).fadeOut();
+}
+
+/**
  * 完整数据渲染
  */
 /**
@@ -452,11 +479,6 @@ function renderSkeletonItems(items) {
 function renderFullItems(items) {
     const $container = $('#hap-items-container');
     $container.empty();
-
-    if (!items || items.length === 0) {
-        $container.html('<div class="hap-no-items">未找到匹配商品</div>');
-        return;
-    }
 
     // 创建文档片段提升性能
     const fragment = document.createDocumentFragment();
@@ -513,7 +535,7 @@ function renderFullItems(items) {
         // 添加购买按钮
         footerContent.push(`
             <button class="hap-buy-btn" 
-                    data-item-id="${item.id || ''}"
+                    data-item-id="${item.item_id || ''}"
                     data-price="${item.price || 0}">
                 购买 (${item.price || '?'} ${getCurrencyName(item.currency)})
             </button>
