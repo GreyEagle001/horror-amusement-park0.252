@@ -21,46 +21,6 @@ class HAP_Warehouse
         add_action('wp_ajax_hap_get_inventory', [$this, 'ajax_get_inventory']);
     }
 
-    function handle_buy_item()
-    {
-        if (!is_user_logged_in()) {
-            wp_send_json_error('请先登录');
-        }
-
-        $item_id = intval($_POST['item_id']);
-        $user_id = get_current_user_id();
-
-        // 获取道具信息
-        global $wpdb;
-        $item = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}hap_items WHERE item_id = %d",
-            $item_id
-        ));
-
-        if (!$item) {
-            wp_send_json_error('道具不存在');
-        }
-
-        // 检查玩家是否有足够的货币
-        $user_currency = get_user_meta($user_id, 'game_coin', true);
-        if ($user_currency < $item->price) {
-            wp_send_json_error('货币不足');
-        }
-
-        // 扣除货币
-        update_user_meta($user_id, 'game_coin', $user_currency - $item->price);
-
-        // 将道具添加到仓库
-        $warehouse_table = $wpdb->prefix . 'hap_warehouse';
-        $wpdb->insert($warehouse_table, [
-            'user_id' => $user_id,
-            'item_name' => $item->name,
-            'quantity' => 1, // 默认数量为 1
-        ]);
-
-        wp_send_json_success('购买成功');
-    }
-
     public function render_warehouse()
     {
         if (!is_user_logged_in()) {
@@ -89,7 +49,6 @@ class HAP_Warehouse
                     </select>
                 </div>
                 <div class="hap-inventory-grid" id="hap-inventory-container">
-                    <?php $this->render_inventory(); ?>
                 </div>
             </div>
 
@@ -102,65 +61,173 @@ class HAP_Warehouse
         return ob_get_clean();
     }
 
-    private function render_inventory($args = [])
-    {
+    private function render_inventory($args = []) {
         $user_id = get_current_user_id();
-        $result = $this->item_manager->get_user_inventory($user_id, $args);
-
-        if (empty($result['items'])) {
-            echo '<div class="hap-no-items">仓库空空如也</div>';
-            return;
+        $result = $this->get_user_inventory($user_id, $args);
+    
+        // 类型安全校验
+        if (empty($result['items']) || !is_array($result['items'])) {
+            return []; // 始终返回数组类型
         }
-
-        foreach ($result['items'] as $item) {
-            $this->render_inventory_item($item);
-        }
+    
+        return $result['items']; // 明确返回数据项
     }
+    
+
+    public function get_user_inventory($user_id, $args = []) {
+        global $wpdb;
+    
+        // 参数处理
+        $type = isset($args['type']) ? sanitize_text_field($args['type']) : '';
+        $page = isset($args['page']) ? max(1, absint($args['page'])) : 1;
+        $per_page = isset($args['per_page']) ? absint($args['per_page']) : 20;
+    
+        // 第一步：从仓库表获取用户商品基础信息
+        $warehouse_query = $wpdb->prepare(
+            "SELECT item_id, purchase_price, quantity, currency 
+             FROM {$wpdb->prefix}hap_warehouse 
+             WHERE user_id = %d",
+            $user_id
+        );
+        $warehouse_items = $wpdb->get_results($warehouse_query, ARRAY_A);
+    
+        if (empty($warehouse_items)) {
+            return ['items' => []];
+        }
+    
+        // 提取需要查询的item_id列表
+        $item_ids = array_column($warehouse_items, 'item_id');
+        $placeholders = implode(',', array_fill(0, count($item_ids), '%d'));
+    
+        // 第二步：获取商品详情（带类型筛选）
+        $items_query = "
+            SELECT 
+                i.item_id, i.item_type, i.name, i.attributes, i.quality,
+                i.restrictions, i.effects, i.duration, i.price, i.author,
+                i.created_at, i.level, i.consumption, i.learning_requirements
+            FROM {$wpdb->prefix}hap_items AS i
+            WHERE i.item_id IN ($placeholders)
+        ";
+    
+        // 添加类型筛选条件
+        if (!empty($type)) {
+            $items_query .= " AND i.item_type = %s";
+            $query_params = array_merge($item_ids, [$type]);
+        } else {
+            $query_params = $item_ids;
+        }
+    
+        $items_data = $wpdb->get_results(
+            $wpdb->prepare($items_query, $query_params),
+            ARRAY_A
+        );
+    
+        // 合并数据
+        $merged_items = [];
+        foreach ($items_data as $item) {
+            $warehouse_key = array_search($item['item_id'], $item_ids);
+            if ($warehouse_key !== false) {
+                $merged_items[] = array_merge(
+                    $warehouse_items[$warehouse_key], // 仓库数据
+                    $item // 商品详情数据
+                );
+            }
+        }
+        error_log('item: ' . json_encode($item, JSON_PRETTY_PRINT));
+        error_log('merged_items: ' . json_encode($merged_items, JSON_PRETTY_PRINT));
+    
+        // 分页处理
+        $total_items = count($merged_items);
+        $paginated_items = array_slice(
+            $merged_items,
+            ($page - 1) * $per_page,
+            $per_page
+        );
+
+        error_log('paginated_items: ' . json_encode($paginated_items, JSON_PRETTY_PRINT));
+    
+        return [
+            'items' => $paginated_items,
+            'total' => $total_items,
+            'total_pages' => ceil($total_items / $per_page)
+        ];
+    }
+    
+    
+
 
     private function render_inventory_item($item)
     {
-        // 从 wp_hap_items 中获取道具详细信息
-        $item_details = $this->item_manager->get_item_by_name($item->item_name);
-
-        if (!$item_details) {
-            return; // 如果道具不存在，跳过渲染
+        // 基础验证
+        if (!is_array($item) || empty($item['item_id'])) {
+            return null;
         }
-
-        $quality_class = 'hap-quality-' . $item_details->quality;
-    ?>
-        <div class="hap-inventory-item <?php echo esc_attr($quality_class); ?>">
-            <div class="hap-item-image">
-                <div class="hap-item-image-placeholder"></div>
-            </div>
-            <div class="hap-item-info">
-                <h4><?php echo esc_html($item_details->name); ?></h4>
-                <div class="hap-item-meta">
-                    <span class="hap-item-type"><?php echo esc_html($this->get_type_name($item_details->type)); ?></span>
-                    <span class="hap-item-quality"><?php echo esc_html($this->get_quality_name($item_details->quality)); ?></span>
-                    <span class="hap-item-quantity">数量: <?php echo esc_html($item->quantity); ?></span>
-                </div>
-            </div>
-        </div>
-    <?php
-    }
-
-    public function ajax_get_inventory()
-    {
-        check_ajax_referer('hap-nonce', 'nonce');
-
-        $user_id = get_current_user_id();
-        $args = [
-            'type' => sanitize_text_field($_POST['type'] ?? ''),
-            'page' => absint($_POST['page'] ?? 1),
-            'per_page' => 12
+    
+        return [
+            // 核心属性
+            'item_id'      => $item['item_id'],
+            'name'         => esc_html($item['name'] ?? '未命名道具'),
+            'item_type'    => esc_html($this->get_type_name($item['item_type'] ?? 'unknown')),
+            'quality'      => esc_html($item['quality'] ?? 'common'),
+            'author'       => esc_html($item['author'] ?? '系统'),
+            'created_at'   => $item['created_at'] ?? date('Y-m-d H:i:s'),
+    
+            // 交易信息
+            'price'          => floatval($item['price'] ?? 0),
+            'purchase_price' => floatval($item['purchase_price'] ?? 0),
+            'currency'       => esc_html($item['currency'] ?? 'game_coin'),
+            'quantity'       => intval($item['quantity'] ?? 1),
+            'sales_count'    => intval($item['sales_count'] ?? 0), // 历史兼容字段
+    
+            // 游戏机制
+            'effects'               => esc_html($item['effects'] ?? '无效果'),
+            'attributes'            => esc_html($item['attributes'] ?? '无属性'),
+            'restrictions'          => esc_html($item['restrictions'] ?? '无限制'),
+            'duration'              => intval($item['duration'] ?? 0),
+            'level'                 => $item['level'] ?? null,
+            'consumption'           => $item['consumption'] ?? null,
+            'learning_requirements' => $item['learning_requirements'] ?? null
         ];
-
-        ob_start();
-        $this->render_inventory($args);
-        $html = ob_get_clean();
-
-        wp_send_json_success(['html' => $html]);
     }
+    
+    
+
+
+    public function ajax_get_inventory() {
+        check_ajax_referer('hap-nonce', 'nonce');
+    
+        try {
+            $args = [
+                'type' => sanitize_text_field($_POST['type'] ?? ''),
+                'page' => max(1, absint($_POST['page'] ?? 1)),
+                'per_page' => 12
+            ];
+    
+            // 获取原始数据
+            $rawItems = $this->render_inventory($args);
+            
+            // 处理数据项
+            $dataItems = [];
+            if (is_iterable($rawItems)) {
+                foreach ($rawItems as $item) {
+                    if ($dataItem = $this->render_inventory_item($item)) {
+                        $dataItems[] = $dataItem;
+                    }
+                }
+            }
+    
+            wp_send_json_success([
+                'items' => $dataItems,
+                'isEmpty' => empty($dataItems)
+            ]);
+    
+        } catch (Exception $e) {
+            wp_send_json_error([
+                'message' => '库存加载失败: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
 
     private function render_custom_item_form()
     {

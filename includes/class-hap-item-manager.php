@@ -148,7 +148,7 @@ class HAP_Item_Manager
     }
 
 
-    // 获取商品详情
+    // 通过item_id获取商品
     public function get_item($item_id)
     {
         $item = $this->wpdb->get_row(
@@ -261,7 +261,7 @@ class HAP_Item_Manager
             // 检查道具是否已存在
             $existing_item = $this->wpdb->get_row(
                 $this->wpdb->prepare(
-                    "SELECT * FROM {$this->tables['transactions']} WHERE user_id = %d AND item_id = %d",
+                    "SELECT * FROM {$this->tables['warehouse']} WHERE user_id = %d AND item_id = %d",
                     $user_id,
                     $item_id
                 )
@@ -270,7 +270,7 @@ class HAP_Item_Manager
             if ($existing_item) {
                 // 如果道具已存在，则更新数量
                 $this->wpdb->update(
-                    $this->tables['transactions'],
+                    $this->tables['warehouse'],
                     ['quantity' => $existing_item->quantity + 1],
                     ['id' => $existing_item->id],
                     ['%d'],
@@ -279,7 +279,7 @@ class HAP_Item_Manager
             } else {
                 // 如果道具不存在，则插入新记录
                 $this->wpdb->insert(
-                    $this->tables['transactions'],
+                    $this->tables['warehouse'],
                     [
                         'user_id' => $user_id,
                         'item_id' => $item_id,

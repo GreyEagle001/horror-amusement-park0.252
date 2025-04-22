@@ -334,7 +334,7 @@ jQuery(document).ready(function ($) {
      * @param {number} [page=1] - 当前页码
      */
     function loadItems(page) {
-      const $container = $("#hap-items-container");
+      const $container = $(".hap-items-grid");
 
       // 1. 防止重复加载
       if ($container.data("loading")) return;
@@ -736,7 +736,7 @@ jQuery(document).ready(function ($) {
     });
   }
 
-  function loadInventory() {
+  function loadInventory(page) {
     const $container = $("#hap-inventory-container");
     if ($container.data("loading")) return;
 
@@ -748,11 +748,19 @@ jQuery(document).ready(function ($) {
       $.post(hap_ajax.ajax_url, {
         action: "hap_get_inventory",
         nonce: hap_ajax.nonce,
+        page: page,
+        per_page: 20,
+        item_type:
+          $("#hap-inventory-type").val() !== "*"
+            ? $("#hap-inventory-type").val()
+            : undefined,
       })
     )
       .then((response) => {
         if (response.success) {
-          renderInventory(response.items);
+          console.log("response:", response);
+          console.log("items1:", response.items);
+          renderInventory(response.data.items);
         } else {
           throw new Error(response.data || "加载失败");
         }
@@ -769,27 +777,43 @@ jQuery(document).ready(function ($) {
     const $container = $("#hap-inventory-container");
     $container.empty();
 
+    console.log("items2:", items);
+
     if (items.length === 0) {
-      $container.html('<div class="hap-no-items">仓库空空如也</div>');
-      return;
+        $container.html('<div class="hap-no-items">仓库空空如也</div>');
+        return;
     }
 
     const fragment = document.createDocumentFragment();
 
     items.forEach((item) => {
-      const itemEl = document.createElement("div");
-      itemEl.className = "hap-inventory-item";
+        const itemEl = document.createElement("div");
+        itemEl.className = "hap-inventory-item hap-quality-" + item.quality;
 
-      // 显示道具名称和数量
-      let html = `<h4>${escapeHtml(item.item_name)}</h4>
-                       <p>数量: ${escapeHtml(item.quantity)}</p>`;
+        // 构建道具的 HTML
+        let html = `
+            <div class="hap-item-image">
+                <div class="hap-item-image-placeholder"></div>
+            </div>
+            <div class="hap-item-info">
+                <h4>${escapeHtml(item.name)}</h4>
+                <div class="hap-item-meta">
+                    <span class="hap-item-type">${escapeHtml(item.item_type)}</span>
+                    <span class="hap-item-quality">${escapeHtml(item.quality)}</span>
+                    <span class="hap-item-quantity">数量: ${escapeHtml(item.quantity)}</span>
+                    <span class="hap-item-effects">${escapeHtml(item.effects)}</span>
+                    <span class="hap-item-price">${escapeHtml(item.price)} ${escapeHtml(item.currency)}</span>
+                </div>
+            </div>
+        `;
 
-      itemEl.innerHTML = html;
-      fragment.appendChild(itemEl);
+        itemEl.innerHTML = html; // 设置 HTML
+        fragment.appendChild(itemEl);
     });
 
     $container.append(fragment);
-  }
+}
+
 
   function loadItemFormFields(itemType) {
     const $container = $("#hap-item-form-fields");

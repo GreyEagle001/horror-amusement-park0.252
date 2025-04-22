@@ -244,6 +244,7 @@ class Horror_Amusement_Park
         $table_name_warehouse = "{$wpdb->prefix}hap_warehouse";
         $sql_warehouse = "CREATE TABLE IF NOT EXISTS $table_name_warehouse (
             id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            user_id bigint(20) UNSIGNED NOT NULL,
             item_id int(11) NOT NULL,
             quantity int(11) NOT NULL,
             purchase_price decimal(10,2) NOT NULL DEFAULT '0.00',
@@ -256,6 +257,7 @@ class Horror_Amusement_Park
         // 添加 hap_warehouse 表字段注释
         $comments_warehouse = [
             'id' => '主键，自增长',
+            'user_id' => '用户序号',
             'item_id' => '商品序号',
             'quantity' => '数量',
             'purchase_price' => '购买时价格',
