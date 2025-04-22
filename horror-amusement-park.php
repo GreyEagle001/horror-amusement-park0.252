@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name: 惊悚乐园 - 非盈利二创跑团平台
  * Plugin URI: 
@@ -28,62 +29,67 @@ require_once HAP_PLUGIN_DIR . 'includes/class-hap-item-manager.php';
 spl_autoload_register(function ($class) {
     $prefix = 'HAP_';
     $base_dir = HAP_PLUGIN_DIR . 'includes/';
-    
+
     if (strpos($class, $prefix) !== 0) {
         return;
     }
-    
+
     $relative_class = substr($class, strlen($prefix));
     $file = $base_dir . 'class-' . strtolower(str_replace('_', '-', $relative_class)) . '.php';
-    
+
     if (file_exists($file)) {
         require_once $file;
     }
 });
-  
+
 
 
 // 主插件类
-class Horror_Amusement_Park {
+class Horror_Amusement_Park
+{
     private static $instance;
     private $modules = [];
 
-    public static function init() {
+    public static function init()
+    {
         if (!isset(self::$instance)) {
             self::$instance = new self();
         }
         return self::$instance;
     }
 
-    private function __construct() {
+    private function __construct()
+    {
         // 注册激活/停用钩子
         register_activation_hook(__FILE__, [$this, 'activate']);
         register_deactivation_hook(__FILE__, [$this, 'deactivate']);
-        
+
         // 初始化插件
         add_action('plugins_loaded', [$this, 'setup'], 5);
         add_action('init', [$this, 'register_post_types'], 0);
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('admin_init', [$this, 'check_requirements']);
-        
+
         // 添加性能监控
         add_action('shutdown', [$this, 'log_performance']);
-        
+
         // 添加商品注册页面
         add_action('admin_menu', [$this, 'add_admin_menu']);
         add_action('admin_init', [$this, 'handle_item_registration']);
     }
 
-    private function upgrade_database() {
+    private function upgrade_database()
+    {
         $current_version = get_option('hap_db_version', '1.121');
-        
+
         if (version_compare($current_version, HAP_VERSION, '<')) {
             $this->create_tables();
             update_option('hap_db_version', HAP_VERSION);
         }
     }
 
-    public function setup() {
+    public function setup()
+    {
         // 初始化各功能模块
         $this->modules = [
             'personal_center' => HAP_Personal_Center::init(),
@@ -91,43 +97,46 @@ class Horror_Amusement_Park {
             'shock_box'       => HAP_Shock_Box::init(),
             'warehouse'       => HAP_Warehouse::init()
         ];
-        
+
         // 注册自定义用户角色
         $this->register_roles();
-        
+
         // 设置默认选项
         $this->set_default_options();
     }
 
-    public function activate() {
+    public function activate()
+    {
         $this->upgrade_database();
         // 创建必要的数据库表
         $this->create_tables();
-        
+
         // 添加自定义用户角色
         $this->register_roles();
-        
+
         // 注册自定义文章类型
         $this->register_post_types();
-        
+
         // 刷新重写规则
         flush_rewrite_rules();
-        
+
         // 设置定时任务
         if (!wp_next_scheduled('hap_daily_maintenance')) {
             wp_schedule_event(time(), 'daily', 'hap_daily_maintenance');
         }
     }
 
-    public function deactivate() {
+    public function deactivate()
+    {
         // 清理定时任务
         wp_clear_scheduled_hook('hap_daily_maintenance');
-        
+
         // 刷新重写规则
         flush_rewrite_rules();
     }
 
-    public function register_post_types() {
+    public function register_post_types()
+    {
         // 注册商品自定义文章类型
         register_post_type('hap_item', [
             'labels' => [
@@ -150,11 +159,12 @@ class Horror_Amusement_Park {
         ]);
     }
 
-    private function create_tables() {
+    private function create_tables()
+    {
         global $wpdb;
         $charset_collate = $wpdb->get_charset_collate();
-    
-       // 创建 hap_items 表
+
+        // 创建 hap_items 表
         $table_name_items = "{$wpdb->prefix}hap_items";
         $sql_items = "CREATE TABLE IF NOT EXISTS $table_name_items (
             item_id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -204,14 +214,14 @@ class Horror_Amusement_Park {
             'effect_type' => '效果类型（削弱/增强）',  // 新增的效果类型字段注释
             'effect_date' => '效果日期',  // 新增的效果日期字段注释
         ];
-    
+
         // 添加字段注释
         foreach ($comments as $column => $comment) {
             // 获取列的数据类型
             $column_info = $wpdb->get_row("SHOW FULL COLUMNS FROM $table_name_items LIKE '$column'", ARRAY_A);
             if ($column_info) {
                 $column_type = $column_info['Type']; // 获取列的数据类型
-        
+
                 // 使用 CHANGE 语句来修改列的注释
                 $wpdb->query(
                     $wpdb->prepare(
@@ -219,7 +229,6 @@ class Horror_Amusement_Park {
                         $comment
                     )
                 );
-                
             }
             if ($column_info === false) {
                 error_log("SQL错误: " . $wpdb->last_error);
@@ -227,10 +236,10 @@ class Horror_Amusement_Park {
         }
         error_log('购买更新数据库！'); // 输出成功信息
         error_log("[SQL调试] 实际执行SQL: " . $wpdb->last_query);
-    
+
         // 添加表注释
         $wpdb->query("ALTER TABLE $table_name_items COMMENT '商品表，用于存储游戏内商品信息'");
-    
+
         // 创建 hap_warehouse 表
         $table_name_warehouse = "{$wpdb->prefix}hap_warehouse";
         $sql_warehouse = "CREATE TABLE IF NOT EXISTS $table_name_warehouse (
@@ -241,9 +250,9 @@ class Horror_Amusement_Park {
             currency enum('game_coin','skill_points') NOT NULL DEFAULT 'game_coin',
             PRIMARY KEY (id)
         ) $charset_collate ENGINE=InnoDB AUTO_INCREMENT=1;";
-    
+
         dbDelta($sql_warehouse);
-    
+
         // 添加 hap_warehouse 表字段注释
         $comments_warehouse = [
             'id' => '主键，自增长',
@@ -252,13 +261,13 @@ class Horror_Amusement_Park {
             'purchase_price' => '购买时价格',
             'currency' => '货币类型'
         ];
-    
+
         foreach ($comments_warehouse as $column => $comment) {
             // 获取列的数据类型
             $column_info = $wpdb->get_row("SHOW FULL COLUMNS FROM $table_name_warehouse LIKE '$column'", ARRAY_A);
             if ($column_info) {
                 $column_type = $column_info['Type']; // 获取列的数据类型
-        
+
                 // 使用 CHANGE 语句来修改列的注释
                 $wpdb->query(
                     $wpdb->prepare(
@@ -268,8 +277,8 @@ class Horror_Amusement_Park {
                 );
             }
         }
-        
-    
+
+
         // 添加表注释
         $wpdb->query("ALTER TABLE $table_name_warehouse COMMENT '仓库表，用于存储物品库存信息'");
 
@@ -304,7 +313,7 @@ class Horror_Amusement_Park {
             $column_info = $wpdb->get_row("SHOW FULL COLUMNS FROM $table_name_transactions LIKE '$column'", ARRAY_A);
             if ($column_info) {
                 $column_type = $column_info['Type']; // 获取列的数据类型
-        
+
                 // 使用 CHANGE 语句来修改列的注释
                 $wpdb->query(
                     $wpdb->prepare(
@@ -317,12 +326,13 @@ class Horror_Amusement_Park {
 
         // 添加表注释
         $wpdb->query("ALTER TABLE $table_name_transactions COMMENT '交易表，用于存储用户交易信息'");
-    
+
         return ($wpdb->last_error === '');
     }
-    
 
-    public function add_admin_menu() {
+
+    public function add_admin_menu()
+    {
         add_menu_page(
             __('商品注册', 'horror-amusement-park'),
             __('商品注册', 'horror-amusement-park'),
@@ -333,8 +343,9 @@ class Horror_Amusement_Park {
         );
     }
 
-    public function render_item_registration_page() {
-        ?>
+    public function render_item_registration_page()
+    {
+?>
         <div class="wrap">
             <h1><?php _e('注册商品', 'horror-amusement-park'); ?></h1>
             <form method="post" action="">
@@ -412,26 +423,29 @@ class Horror_Amusement_Park {
                 </p>
             </form>
         </div>
-        <?php
+<?php
     }
-    
-    
-    
-    
 
-    public function handle_item_registration() {
-        if (isset($_POST['hap_item_registration_nonce']) && 
-            wp_verify_nonce($_POST['hap_item_registration_nonce'], 'hap_item_registration')) {
-            
+
+
+
+
+    public function handle_item_registration()
+    {
+        if (
+            isset($_POST['hap_item_registration_nonce']) &&
+            wp_verify_nonce($_POST['hap_item_registration_nonce'], 'hap_item_registration')
+        ) {
+
             if (!current_user_can('manage_options')) {
-                add_action('admin_notices', function() {
+                add_action('admin_notices', function () {
                     echo '<div class="notice notice-error is-dismissible"><p>' . __('您没有权限注册商品！', 'horror-amusement-park') . '</p></div>';
                 });
                 return;
             }
-    
+
             global $wpdb;
-    
+
             // 收集并清理数据
             $item_type = sanitize_text_field($_POST['item_type']);
             $name = sanitize_text_field($_POST['name']);
@@ -444,7 +458,7 @@ class Horror_Amusement_Park {
             $price = floatval($_POST['price']);
             $currency = sanitize_text_field($_POST['currency']);
             $author = sanitize_text_field($_POST['author']); // 获取自定义作者字符串
-    
+
             // 插入数据
             $result = $wpdb->insert("{$wpdb->prefix}hap_items", [
                 'item_type' => $item_type,
@@ -460,27 +474,28 @@ class Horror_Amusement_Park {
                 'author' => $author, // 插入自定义作者字符串
                 'created_at' => current_time('mysql')
             ]);
-    
+
             // 检查插入结果
             if ($result === false) {
                 error_log('插入商品失败: ' . $wpdb->last_error);
-                add_action('admin_notices', function() {
+                add_action('admin_notices', function () {
                     echo '<div class="notice notice-error is-dismissible"><p>' . __('商品注册失败！', 'horror-amusement-park') . '</p></div>';
                 });
             } else {
                 // 成功消息
-                add_action('admin_notices', function() {
+                add_action('admin_notices', function () {
                     echo '<div class="notice notice-success is-dismissible"><p>' . __('商品注册成功！', 'horror-amusement-park') . '</p></div>';
                 });
             }
         }
     }
-    
-    
-    
-    
 
-    private function register_roles() {
+
+
+
+
+    private function register_roles()
+    {
         // 贡献者角色（比默认贡献者更多权限）
         if (!get_role('contributor')) {
             add_role('contributor', __('贡献者', 'horror-amusement-park'), [
@@ -492,7 +507,7 @@ class Horror_Amusement_Park {
                 'delete_hap_items'       => true
             ]);
         }
-        
+
         // 为管理员添加商品管理权限
         $admin = get_role('administrator');
         if ($admin) {
@@ -504,7 +519,8 @@ class Horror_Amusement_Park {
         }
     }
 
-    private function set_default_options() {
+    private function set_default_options()
+    {
         $defaults = [
             'hap_currency_name'       => __('游戏币', 'horror-amusement-park'),
             'hap_skill_points_name'   => __('技巧值', 'horror-amusement-park'),
@@ -512,7 +528,7 @@ class Horror_Amusement_Park {
             'hap_item_price_min'      => 10,
             'hap_item_price_max'      => 10000
         ];
-        
+
         foreach ($defaults as $option => $value) {
             if (get_option($option) === false) {
                 update_option($option, $value);
@@ -520,7 +536,8 @@ class Horror_Amusement_Park {
         }
     }
 
-    public function enqueue_assets() {
+    public function enqueue_assets()
+    {
         // 主样式文件
         wp_enqueue_style(
             'hap-style',
@@ -528,7 +545,7 @@ class Horror_Amusement_Park {
             [],
             filemtime(HAP_PLUGIN_DIR . 'assets/css/style.css')
         );
-        
+
         // 主脚本文件
         wp_enqueue_script(
             'hap-script',
@@ -537,7 +554,7 @@ class Horror_Amusement_Park {
             filemtime(HAP_PLUGIN_DIR . 'assets/js/script.js'),
             true
         );
-        
+
         // 本地化脚本
         wp_localize_script('hap-script', 'hap_ajax', [
             'ajax_url'   => admin_url('admin-ajax.php'),
@@ -550,7 +567,7 @@ class Horror_Amusement_Park {
                 'confirm_buy'  => __('确定要购买此商品吗？', 'horror-amusement-park')
             ]
         ]);
-        
+
         // 条件加载
         if (is_page('shock-box')) {
             wp_enqueue_script(
@@ -561,7 +578,7 @@ class Horror_Amusement_Park {
                 true
             );
         }
-        
+
         if (is_page('warehouse')) {
             wp_enqueue_script(
                 'hap-warehouse',
@@ -573,26 +590,27 @@ class Horror_Amusement_Park {
         }
     }
 
-    public function check_requirements() {
+    public function check_requirements()
+    {
         $errors = [];
-        
+
         // 检查PHP版本
         if (version_compare(PHP_VERSION, '7.4', '<')) {
             $errors[] = __('惊悚乐园插件需要PHP 7.4或更高版本', 'horror-amusement-park');
         }
-        
+
         // 检查WordPress版本
         if (version_compare(get_bloginfo('version'), '5.6', '<')) {
             $errors[] = __('惊悚乐园插件需要WordPress 5.6或更高版本', 'horror-amusement-park');
         }
-        
+
         // 如果有错误，显示通知并停用插件
         if (!empty($errors)) {
             if (isset($_GET['activate'])) {
                 unset($_GET['activate']);
             }
-            
-            add_action('admin_notices', function() use ($errors) {
+
+            add_action('admin_notices', function () use ($errors) {
                 foreach ($errors as $error) {
                     echo '<div class="notice notice-error is-dismissible"><p>' . esc_html($error) . '</p></div>';
                 }
@@ -601,7 +619,8 @@ class Horror_Amusement_Park {
         }
     }
 
-    public function log_performance() {
+    public function log_performance()
+    {
         // 记录性能数据的逻辑
         // 这里可以添加代码来记录执行时间、内存使用等
     }
@@ -609,4 +628,3 @@ class Horror_Amusement_Park {
 
 // 启动插件
 Horror_Amusement_Park::init();
-

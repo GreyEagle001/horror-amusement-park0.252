@@ -1,44 +1,48 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-class HAP_Personal_Center {
+class HAP_Personal_Center
+{
     private static $instance;
     private $edit_count_meta_key = 'hap_edit_count';
     private $edit_request_meta_key = 'hap_edit_request';
-    
-    public static function init() {
+
+    public static function init()
+    {
         if (!isset(self::$instance)) {
             self::$instance = new self();
         }
         return self::$instance;
     }
-    
-    private function __construct() {
+
+    private function __construct()
+    {
         add_shortcode('personal_center', [$this, 'render_personal_center']);
         add_action('wp_ajax_hap_save_profile', [$this, 'save_profile']);
         add_action('wp_ajax_hap_request_edit', [$this, 'request_edit']);
         add_action('wp_ajax_hap_upload_avatar', [$this, 'handle_avatar_upload']);
     }
-    
-    public function render_personal_center() {
+
+    public function render_personal_center()
+    {
         if (!is_user_logged_in()) {
             return '<p>请先登录以访问个人中心。</p>';
         }
-        
+
         $user_id = get_current_user_id();
         $user_data = $this->get_user_data($user_id);
         $can_edit = $this->can_user_edit($user_id);
         $has_requested = get_user_meta($user_id, $this->edit_request_meta_key, true);
-        
+
         ob_start();
-        ?>
+?>
         <div class="hap-personal-center">
             <h2>个人中心</h2>
-            
+
             <?php if ($can_edit): ?>
                 <form id="hap-profile-form" method="post" enctype="multipart/form-data">
                     <?php wp_nonce_field('hap_save_profile', 'hap_nonce'); ?>
-                    
+
                     <!-- 基础信息部分 -->
                     <div class="hap-section">
                         <h3>基础信息</h3>
@@ -47,36 +51,36 @@ class HAP_Personal_Center {
                             <input type="text" name="nickname" value="<?php echo esc_attr($user_data['basic_info']['nickname']); ?>">
                         </div>
                         <div class="hap-field">
-        <label>头像</label>
-        <div class="hap-avatar-preview">
-            <?php 
-            $avatar_id = $user_data['basic_info']['avatar'] ?? 0;
-            if ($avatar_id && wp_get_attachment_url($avatar_id)): 
-                $avatar_url = wp_get_attachment_url($avatar_id);
-                $avatar_alt = esc_attr($user_data['basic_info']['nickname']).'的头像';
-            ?>
-                <img src="<?php echo esc_url($avatar_url); ?>" alt="<?php echo $avatar_alt; ?>" style="max-width: 100px;">
-            <?php else: ?>
-                <div class="hap-avatar-placeholder">暂无头像</div>
-            <?php endif; ?>
-        </div>
-        <input type="file" name="avatar" id="hap-avatar-upload" accept="image/*">
-        <input type="hidden" name="avatar_id" id="hap-avatar-id" value="<?php echo esc_attr($avatar_id); ?>">
-    </div>
+                            <label>头像</label>
+                            <div class="hap-avatar-preview">
+                                <?php
+                                $avatar_id = $user_data['basic_info']['avatar'] ?? 0;
+                                if ($avatar_id && wp_get_attachment_url($avatar_id)):
+                                    $avatar_url = wp_get_attachment_url($avatar_id);
+                                    $avatar_alt = esc_attr($user_data['basic_info']['nickname']) . '的头像';
+                                ?>
+                                    <img src="<?php echo esc_url($avatar_url); ?>" alt="<?php echo $avatar_alt; ?>" style="max-width: 100px;">
+                                <?php else: ?>
+                                    <div class="hap-avatar-placeholder">暂无头像</div>
+                                <?php endif; ?>
+                            </div>
+                            <input type="file" name="avatar" id="hap-avatar-upload" accept="image/*">
+                            <input type="hidden" name="avatar_id" id="hap-avatar-id" value="<?php echo esc_attr($avatar_id); ?>">
+                        </div>
                         <div class="hap-field">
                             <label>个性签名</label>
                             <textarea name="bio"><?php echo esc_textarea($user_data['basic_info']['bio']); ?></textarea>
                         </div>
                         <div class="hap-field">
                             <label>通关副本 (每行一个)</label>
-                            <textarea name="completed_scenarios"><?php 
-                                if (!empty($user_data['basic_info']['completed_scenarios'])) {
-                                    echo esc_textarea(implode("\n", $user_data['basic_info']['completed_scenarios']));
-                                }
-                            ?></textarea>
+                            <textarea name="completed_scenarios"><?php
+                                                                    if (!empty($user_data['basic_info']['completed_scenarios'])) {
+                                                                        echo esc_textarea(implode("\n", $user_data['basic_info']['completed_scenarios']));
+                                                                    }
+                                                                    ?></textarea>
                         </div>
                     </div>
-                    
+
                     <!-- 角色属性部分 -->
                     <div class="hap-section">
                         <h3>角色属性</h3>
@@ -89,7 +93,7 @@ class HAP_Personal_Center {
                             <?php endforeach; ?>
                         </div>
                     </div>
-                    
+
                     <!-- 衍生属性部分 -->
                     <div class="hap-section">
                         <h3>衍生属性</h3>
@@ -102,20 +106,20 @@ class HAP_Personal_Center {
                             <?php endforeach; ?>
                         </div>
                     </div>
-                    
+
                     <!-- 专精部分 -->
                     <div class="hap-section">
-            <h3>专精</h3>
-            <div class="hap-specializations-grid">
-                <?php foreach ($user_data['specializations'] as $key => $value): ?>
-                    <div class="hap-specialization">
-                        <label><?php echo esc_html($this->get_specialization_label($key)); ?></label>
-                        <input type="text" name="specializations[<?php echo esc_attr($key); ?>]" value="<?php echo esc_attr($value); ?>" class="hap-text-input">
+                        <h3>专精</h3>
+                        <div class="hap-specializations-grid">
+                            <?php foreach ($user_data['specializations'] as $key => $value): ?>
+                                <div class="hap-specialization">
+                                    <label><?php echo esc_html($this->get_specialization_label($key)); ?></label>
+                                    <input type="text" name="specializations[<?php echo esc_attr($key); ?>]" value="<?php echo esc_attr($value); ?>" class="hap-text-input">
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-                    
+
                     <!-- 货币部分 -->
                     <div class="hap-section">
                         <h3>货币</h3>
@@ -130,7 +134,7 @@ class HAP_Personal_Center {
                             </div>
                         </div>
                     </div>
-                    
+
                     <button type="submit" class="hap-submit">保存信息</button>
                 </form>
             <?php else: ?>
@@ -171,7 +175,7 @@ class HAP_Personal_Center {
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- 显示角色属性 -->
                     <div class="hap-section">
                         <h3>角色属性</h3>
@@ -184,7 +188,7 @@ class HAP_Personal_Center {
                             <?php endforeach; ?>
                         </div>
                     </div>
-                    
+
                     <!-- 显示衍生属性 -->
                     <div class="hap-section">
                         <h3>衍生属性</h3>
@@ -197,7 +201,7 @@ class HAP_Personal_Center {
                             <?php endforeach; ?>
                         </div>
                     </div>
-                    
+
                     <!-- 显示专精 -->
                     <div class="hap-section">
                         <h3>专精</h3>
@@ -210,7 +214,7 @@ class HAP_Personal_Center {
                             <?php endforeach; ?>
                         </div>
                     </div>
-                    
+
                     <!-- 显示货币 -->
                     <div class="hap-section">
                         <h3>货币</h3>
@@ -225,7 +229,7 @@ class HAP_Personal_Center {
                             </div>
                         </div>
                     </div>
-                    
+
                     <?php if (!$has_requested): ?>
                         <button id="hap-request-edit" class="hap-button">申请修改</button>
                     <?php else: ?>
@@ -234,11 +238,12 @@ class HAP_Personal_Center {
                 </div>
             <?php endif; ?>
         </div>
-        <?php
+<?php
         return ob_get_clean();
     }
-    
-    private function get_user_data($user_id) {
+
+    private function get_user_data($user_id)
+    {
         $defaults = [
             'basic_info' => [
                 'nickname' => '',
@@ -251,17 +256,18 @@ class HAP_Personal_Center {
             'specializations' => $this->get_default_specializations(),
             'currency' => $this->get_default_currency()
         ];
-        
+
         $user_data = get_user_meta($user_id, 'hap_profile_data', true);
-        
+
         if (empty($user_data)) {
             return $defaults;
         }
-        
+
         return wp_parse_args($user_data, $defaults);
     }
-    
-    private function get_default_attributes() {
+
+    private function get_default_attributes()
+    {
         return [
             'strength' => 0,       // 力量
             'agility' => 0,        // 敏捷
@@ -278,8 +284,9 @@ class HAP_Personal_Center {
             'magic' => 0           // 灵术
         ];
     }
-    
-    private function get_default_derived_attributes() {
+
+    private function get_default_derived_attributes()
+    {
         return [
             'ap' => 0,              // AP
             'dodge' => 0,           // 闪避
@@ -297,8 +304,9 @@ class HAP_Personal_Center {
             'magic_hit' => 0        // 灵术命中
         ];
     }
-    
-    private function get_default_specializations() {
+
+    private function get_default_specializations()
+    {
         return [
             'general' => 0,    // 通用专精
             'combat' => 0,      // 格斗专精
@@ -310,15 +318,17 @@ class HAP_Personal_Center {
             'magic' => 0        // 灵术专精
         ];
     }
-    
-    private function get_default_currency() {
+
+    private function get_default_currency()
+    {
         return [
             'game_coin' => 0,   // 游戏币
             'skill_points' => 0 // 技巧值
         ];
     }
-    
-    private function get_attribute_label($key) {
+
+    private function get_attribute_label($key)
+    {
         $labels = [
             'strength' => '力量',
             'agility' => '敏捷',
@@ -334,11 +344,12 @@ class HAP_Personal_Center {
             'shooting' => '射击',
             'magic' => '灵术'
         ];
-        
+
         return $labels[$key] ?? $key;
     }
-    
-    private function get_derived_attribute_label($key) {
+
+    private function get_derived_attribute_label($key)
+    {
         $labels = [
             'ap' => 'AP',
             'dodge' => '闪避',
@@ -355,11 +366,12 @@ class HAP_Personal_Center {
             'shooting_hit' => '射击命中',
             'magic_hit' => '灵术命中'
         ];
-        
+
         return $labels[$key] ?? $key;
     }
-    
-    private function get_specialization_label($key) {
+
+    private function get_specialization_label($key)
+    {
         $labels = [
             'general' => '通用专精',
             'combat' => '格斗专精',
@@ -370,45 +382,48 @@ class HAP_Personal_Center {
             'scouting' => '侦查专精',
             'magic' => '灵术专精'
         ];
-        
+
         return $labels[$key] ?? $key;
     }
-    
-    public function save_profile() {
+
+    public function save_profile()
+    {
         check_ajax_referer('hap-nonce', 'nonce');
-        
+
         $user_id = get_current_user_id();
         if (!$user_id) {
             wp_send_json_error('用户未登录');
         }
-        
+
         // 处理头像ID
         $avatar_id = intval($_POST['avatar_id']);
-        
+
         // 处理基础信息
         $basic_info = [
             'nickname' => sanitize_text_field($_POST['nickname']),
             'avatar' => $avatar_id, // 存储附件ID
             'bio' => sanitize_textarea_field($_POST['bio']),
             'completed_scenarios' => array_filter(
-                array_map('sanitize_text_field', 
+                array_map(
+                    'sanitize_text_field',
                     explode("\n", $_POST['completed_scenarios'])
                 )
             )
         ];
-        
+
         // 处理基础信息
         $basic_info = [
             'nickname' => sanitize_text_field($_POST['nickname']),
             'avatar' => esc_url_raw($_POST['avatar_url']),
             'bio' => sanitize_textarea_field($_POST['bio']),
             'completed_scenarios' => array_filter(
-                array_map('sanitize_text_field', 
+                array_map(
+                    'sanitize_text_field',
                     explode("\n", $_POST['completed_scenarios'])
                 )
             )
         ];
-        
+
         // 处理其他数据
         $profile_data = [
             'basic_info' => $basic_info,
@@ -420,72 +435,75 @@ class HAP_Personal_Center {
                 'skill_points' => intval($_POST['currency']['skill_points'])
             ]
         ];
-        
+
         update_user_meta($user_id, 'hap_profile_data', $profile_data);
-        
+
         // 更新编辑次数
         $edit_count = get_user_meta($user_id, $this->edit_count_meta_key, true);
         update_user_meta($user_id, $this->edit_count_meta_key, ($edit_count ? $edit_count + 1 : 1));
-        
+
         wp_send_json_success('个人信息已保存');
     }
-    
-    public function handle_avatar_upload() {
+
+    public function handle_avatar_upload()
+    {
         check_ajax_referer('hap-nonce', 'nonce');
-        
+
         if (empty($_FILES['avatar'])) {
             wp_send_json_error('没有上传文件');
         }
-        
+
         $file = $_FILES['avatar'];
-        
+
         // 检查文件类型
         $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
         if (!in_array($file['type'], $allowed_types)) {
             wp_send_json_error('只允许上传JPEG、PNG或GIF图片');
         }
-        
+
         // 检查文件大小 (限制为2MB)
         if ($file['size'] > 2 * 1024 * 1024) {
             wp_send_json_error('图片大小不能超过2MB');
         }
-        
+
         // 处理上传
         require_once(ABSPATH . 'wp-admin/includes/image.php');
         require_once(ABSPATH . 'wp-admin/includes/file.php');
         require_once(ABSPATH . 'wp-admin/includes/media.php');
-        
+
         $attachment_id = media_handle_upload('avatar', 0);
-        
+
         if (is_wp_error($attachment_id)) {
             wp_send_json_error($attachment_id->get_error_message());
         }
-        
+
         wp_send_json_success([
             'url' => wp_get_attachment_url($attachment_id),
             'id' => $attachment_id
         ]);
     }
-    
-    public function request_edit() {
+
+    public function request_edit()
+    {
         check_ajax_referer('hap-nonce', 'nonce');
-        
+
         $user_id = get_current_user_id();
         if (!$user_id) {
             wp_send_json_error('用户未登录');
         }
-        
+
         if (get_user_meta($user_id, $this->edit_request_meta_key, true)) {
             wp_send_json_error('您已经提交过申请');
         }
-        
+
         update_user_meta($user_id, $this->edit_request_meta_key, 'pending');
-        update_user_meta($user_id, $this->edit_request_meta_key.'_time', current_time('mysql', true));
-        
+        update_user_meta($user_id, $this->edit_request_meta_key . '_time', current_time('mysql', true));
+
         wp_send_json_success('修改申请已提交');
     }
-    
-    private function can_user_edit($user_id) {
+
+    private function can_user_edit($user_id)
+    {
         $edit_count = get_user_meta($user_id, $this->edit_count_meta_key, true);
         return empty($edit_count) || $edit_count < 1;
     }

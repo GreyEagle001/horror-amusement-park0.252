@@ -1,31 +1,36 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-class HAP_Item_Manager {
+class HAP_Item_Manager
+{
     private static $instance;
     private $wpdb;
     private $tables;
 
-    public static function init() {
+    public static function init()
+    {
         if (!isset(self::$instance)) {
             self::$instance = new self();
         }
         return self::$instance;
     }
 
-    private function __construct() {
+    private function __construct()
+    {
         global $wpdb;
         $this->wpdb = $wpdb;
         $this->tables = [
             'items' => $wpdb->prefix . 'hap_items',
             'equipment' => $wpdb->prefix . 'hap_equipment_specs',
             'skills' => $wpdb->prefix . 'hap_skill_specs',
-            'transactions' => $wpdb->prefix . 'hap_transactions'
+            'transactions' => $wpdb->prefix . 'hap_transactions',
+            'warehouse' => $wpdb->prefix . 'hap_warehouse'
         ];
     }
 
     // 创建商品
-    public function create_item($data) {
+    public function create_item($data)
+    {
         $defaults = [
             'item_type' => 'consumable',
             'name' => '',
@@ -94,7 +99,8 @@ class HAP_Item_Manager {
         return $item_id;
     }
 
-    public function get_items($args = []) {
+    public function get_items($args = [])
+    {
         $defaults = [
             'type' => '',
             'status' => 'publish',
@@ -140,10 +146,11 @@ class HAP_Item_Manager {
             'pages' => ceil($total / $args['per_page'])
         ];
     }
-    
+
 
     // 获取商品详情
-    public function get_item($item_id) {
+    public function get_item($item_id)
+    {
         $item = $this->wpdb->get_row(
             $this->wpdb->prepare(
                 "SELECT * FROM {$this->tables['items']} WHERE item_id = %d",
@@ -153,16 +160,17 @@ class HAP_Item_Manager {
 
         if (!$item) {
             return false;
-        }else {
+        } else {
             return $item;
         }
     }
 
     // 搜索商品
-    public function search_items($args = []) {
+    public function search_items($args = [])
+    {
         global $wpdb;
         $table_name = $wpdb->prefix . 'hap_items';
-    
+
         $defaults = [
             'search' => '',
             'type' => '',
@@ -171,7 +179,7 @@ class HAP_Item_Manager {
             'per_page' => 12
         ];
         $args = wp_parse_args($args, $defaults);
-    
+
         $where = '1=1';
         if ($args['search']) {
             $where .= $wpdb->prepare(" AND name LIKE %s", '%' . $wpdb->esc_like($args['search']) . '%');
@@ -182,23 +190,24 @@ class HAP_Item_Manager {
         if ($args['quality']) {
             $where .= $wpdb->prepare(" AND quality = %s", $args['quality']);
         }
-    
+
         $offset = ($args['page'] - 1) * $args['per_page'];
         $sql = "SELECT * FROM $table_name WHERE $where LIMIT $offset, {$args['per_page']}";
         $items = $wpdb->get_results($sql, ARRAY_A);
-    
+
         $total = $wpdb->get_var("SELECT COUNT(*) FROM $table_name WHERE $where");
         $pages = ceil($total / $args['per_page']);
-    
+
         return [
             'items' => $items,
             'page' => $args['page'],
             'pages' => $pages
         ];
     }
-    
 
-    public function get_item_by_name($item_name) {
+
+    public function get_item_by_name($item_name)
+    {
         global $wpdb;
         $table_name = $wpdb->prefix . 'hap_items';
         return $wpdb->get_row($wpdb->prepare(
@@ -206,9 +215,10 @@ class HAP_Item_Manager {
             $item_name
         ));
     }
-    
+
     // 购买商品
-    public function purchase_item($user_id, $item_id) {
+    public function purchase_item($user_id, $item_id)
+    {
         error_log('完成1.0'); // 调试信息
         // 验证商品存在
         $item = $this->get_item($item_id);
@@ -244,9 +254,42 @@ class HAP_Item_Manager {
                     'status' => 'completed',
                     'acquired_at' => current_time('mysql')
                 ],
-                ['%d', '%d', '%f', '%s', '%s', '%s'] 
+                ['%d', '%d', '%f', '%s', '%s', '%s']
             );
             error_log('完成1.4'); // 调试信息
+
+            // 检查道具是否已存在
+            $existing_item = $this->wpdb->get_row(
+                $this->wpdb->prepare(
+                    "SELECT * FROM {$this->tables['transactions']} WHERE user_id = %d AND item_id = %d",
+                    $user_id,
+                    $item_id
+                )
+            );
+
+            if ($existing_item) {
+                // 如果道具已存在，则更新数量
+                $this->wpdb->update(
+                    $this->tables['transactions'],
+                    ['quantity' => $existing_item->quantity + 1],
+                    ['id' => $existing_item->id],
+                    ['%d'],
+                    ['%d']
+                );
+            } else {
+                // 如果道具不存在，则插入新记录
+                $this->wpdb->insert(
+                    $this->tables['transactions'],
+                    [
+                        'user_id' => $user_id,
+                        'item_id' => $item_id,
+                        'quantity' => 1, // 新增数量为1
+                        'purchase_price' => $item->price,
+                        'currency' => $item->currency
+                    ],
+                    ['%d', '%d', '%d', '%f', '%s']
+                );
+            }
 
             $this->wpdb->query('COMMIT');
 
@@ -257,36 +300,39 @@ class HAP_Item_Manager {
         }
     }
 
-    public function update_sales_count($item_id) {
+    public function update_sales_count($item_id)
+    {
         global $wpdb;
-    
+
         // 假设您的商品销售次数存储在一个名为 `wp_items` 的表中
         // 并且有一个名为 `sales_count` 的字段来记录销售次数
         $table_name = $wpdb->prefix . 'hap_items'; // 表名
         $item_id = absint($item_id); // 确保 item_id 是一个正整数
-    
+
         // 更新销售次数
         $result = $wpdb->query($wpdb->prepare(
             "UPDATE $table_name SET sales_count = sales_count + 1 WHERE item_id = %d",
             $item_id
         ));
-    
+
         // 检查更新是否成功
         if ($result === false) {
             return new WP_Error('db_update_error', '更新销售次数失败');
         }
-    
+
         return true; // 更新成功
     }
 
     // 需要实现以下方法
-    private function get_user_currency($user_id, $currency_type) {
+    private function get_user_currency($user_id, $currency_type)
+    {
         // 从用户meta获取货币数量
         $data = get_user_meta($user_id, 'hap_profile_data', true);
         return $data['currency'][$currency_type] ?? 0;
     }
 
-    private function update_user_currency($user_id, $currency_type, $amount) {
+    private function update_user_currency($user_id, $currency_type, $amount)
+    {
         // 更新用户meta中的货币数量
         $data = get_user_meta($user_id, 'hap_profile_data', true);
         $data['currency'][$currency_type] = max(0, $amount);

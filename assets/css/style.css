@@ -1,539 +1,545 @@
 /* 基础样式 */
-.hap-personal-center, 
+.hap-personal-center,
 .hap-admin-center {
-    max-width: 1000px;
-    margin: 20px auto;
-    padding: 25px;
-    background-color: #1a1a1a;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #e0e0e0;
+  max-width: 1000px;
+  margin: 20px auto;
+  padding: 25px;
+  background-color: #1a1a1a;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #e0e0e0;
 }
 
 .hap-section {
-    margin-bottom: 30px;
-    padding: 20px;
-    background-color: #2a2a2a;
-    border-radius: 6px;
-    border-left: 4px solid #8b0000;
+  margin-bottom: 30px;
+  padding: 20px;
+  background-color: #2a2a2a;
+  border-radius: 6px;
+  border-left: 4px solid #8b0000;
 }
 
 .hap-section h3 {
-    margin-top: 0;
-    color: #ff4d4d;
-    border-bottom: 1px solid #444;
-    padding-bottom: 10px;
-    font-size: 1.3em;
+  margin-top: 0;
+  color: #ff4d4d;
+  border-bottom: 1px solid #444;
+  padding-bottom: 10px;
+  font-size: 1.3em;
 }
 
 /* 表单字段样式 */
 .hap-field {
-    margin-bottom: 18px;
+  margin-bottom: 18px;
 }
 
 .hap-field label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: bold;
-    color: #ccc;
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #ccc;
 }
 
 .hap-field input[type="text"],
 .hap-field input[type="number"],
 .hap-field textarea,
 .hap-field input[type="file"] {
-    width: 100%;
-    padding: 10px;
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    color: #000; /* 黑色字体 */
-    box-sizing: border-box;
-    transition: border-color 0.3s;
+  width: 100%;
+  padding: 10px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  color: #000; /* 黑色字体 */
+  box-sizing: border-box;
+  transition: border-color 0.3s;
 }
 
 .hap-field input:focus,
 .hap-field textarea:focus {
-    border-color: #8b0000;
-    outline: none;
+  border-color: #8b0000;
+  outline: none;
 }
 
 .hap-field textarea {
-    min-height: 100px;
-    resize: vertical;
+  min-height: 100px;
+  resize: vertical;
 }
 
 /* 按钮样式 */
-.hap-submit, 
+.hap-submit,
 .hap-button {
-    background-color: #8b0000;
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: all 0.3s;
-    text-transform: uppercase;
-    font-weight: bold;
-    letter-spacing: 1px;
+  background-color: #8b0000;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  font-weight: bold;
+  letter-spacing: 1px;
 }
 
-.hap-submit:hover, 
+.hap-submit:hover,
 .hap-button:hover {
-    background-color: #6b0000;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  background-color: #6b0000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* 网格布局 */
 .hap-attributes-grid,
 .hap-specializations-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 15px;
-    margin-top: 15px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
 }
 
 .hap-currency-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
 }
 
 .hap-attribute,
 .hap-specialization,
 .hap-currency {
-    background-color: #333;
-    padding: 12px;
-    border-radius: 4px;
+  background-color: #333;
+  padding: 12px;
+  border-radius: 4px;
 }
 
 /* 查看模式样式 */
 .hap-info-display {
-    background-color: #333;
-    padding: 15px;
-    border-radius: 4px;
+  background-color: #333;
+  padding: 15px;
+  border-radius: 4px;
 }
 
 .hap-info-row {
-    display: flex;
-    margin-bottom: 10px;
-    padding-bottom: 10px;
-    border-bottom: 1px dashed #444;
+  display: flex;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #444;
 }
 
 .hap-info-row:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
 .hap-info-label {
-    font-weight: bold;
-    min-width: 120px;
-    color: #ff4d4d;
+  font-weight: bold;
+  min-width: 120px;
+  color: #ff4d4d;
 }
 
 .hap-info-value {
-    flex: 1;
-    color: #fff;
+  flex: 1;
+  color: #fff;
 }
 
 .hap-info-value ul {
-    margin: 5px 0 0 0;
-    padding-left: 20px;
+  margin: 5px 0 0 0;
+  padding-left: 20px;
 }
 
 /* 属性显示 */
 .hap-attributes-display,
 .hap-specializations-display {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 10px;
-    background-color: #333;
-    padding: 15px;
-    border-radius: 4px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  background-color: #333;
+  padding: 15px;
+  border-radius: 4px;
 }
 
 .hap-attribute-display,
 .hap-specialization-display {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 12px;
-    background-color: #2a2a2a;
-    border-radius: 3px;
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background-color: #2a2a2a;
+  border-radius: 3px;
 }
 
 .hap-attribute-label,
 .hap-specialization-label {
-    color: #ff4d4d;
-    font-weight: bold;
+  color: #ff4d4d;
+  font-weight: bold;
 }
 
 .hap-attribute-value,
 .hap-specialization-value {
-    color: #fff;
+  color: #fff;
 }
 
 /* 货币显示 */
 .hap-currency-display {
-    display: flex;
-    gap: 20px;
-    background-color: #333;
-    padding: 15px;
-    border-radius: 4px;
+  display: flex;
+  gap: 20px;
+  background-color: #333;
+  padding: 15px;
+  border-radius: 4px;
 }
 
 .hap-currency-item {
-    flex: 1;
-    background-color: #2a2a2a;
-    padding: 12px;
-    border-radius: 4px;
-    display: flex;
-    justify-content: space-between;
+  flex: 1;
+  background-color: #2a2a2a;
+  padding: 12px;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
 }
 
 .hap-currency-label {
-    color: #ff4d4d;
-    font-weight: bold;
+  color: #ff4d4d;
+  font-weight: bold;
 }
 
 .hap-currency-value {
-    color: #fff;
+  color: #fff;
 }
 
 /* 头像预览 */
 .hap-avatar-preview {
-    margin-bottom: 10px;
-    min-height: 100px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  margin-bottom: 10px;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hap-avatar-preview img {
-    max-width: 100px;
-    max-height: 100px;
-    border-radius: 50%;
-    border: 2px solid #8b0000;
-    object-fit: cover;
+  max-width: 100px;
+  max-height: 100px;
+  border-radius: 50%;
+  border: 2px solid #8b0000;
+  object-fit: cover;
 }
 
 .hap-avatar-placeholder {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background-color: #333;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px dashed #8b0000;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: #333;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #8b0000;
 }
 
 /* 管理员表格 */
 .hap-requests-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    background-color: #fff;
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background-color: #fff;
 }
 
 .hap-requests-table th,
 .hap-requests-table td {
-    padding: 12px;
-    text-align: left;
-    border: 1px solid #ddd;
-    color: #000;
+  padding: 12px;
+  text-align: left;
+  border: 1px solid #ddd;
+  color: #000;
 }
 
 .hap-requests-table th {
-    background-color: #8b0000;
-    color: white;
+  background-color: #8b0000;
+  color: white;
 }
 
 .hap-requests-table tr:nth-child(even) {
-    background-color: #f2f2f2;
+  background-color: #f2f2f2;
 }
 
 .hap-requests-table tr:hover {
-    background-color: #e6e6e6;
+  background-color: #e6e6e6;
 }
 
 /* 通知样式 */
 .hap-notice {
-    background-color: #333;
-    color: #ffcc00;
-    padding: 12px;
-    border-left: 4px solid #ffcc00;
-    border-radius: 4px;
-    margin-top: 20px;
+  background-color: #333;
+  color: #ffcc00;
+  padding: 12px;
+  border-left: 4px solid #ffcc00;
+  border-radius: 4px;
+  margin-top: 20px;
 }
 
 /* 加载动画 */
 .hap-loading {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255,255,255,.3);
-    border-radius: 50%;
-    border-top-color: #fff;
-    animation: hap-spin 1s ease-in-out infinite;
-    margin-left: 8px;
-    vertical-align: middle;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: hap-spin 1s ease-in-out infinite;
+  margin-left: 8px;
+  vertical-align: middle;
 }
 
 @keyframes hap-spin {
-    to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-    .hap-attributes-grid,
-    .hap-specializations-grid {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    }
-    
-    .hap-personal-center,
-    .hap-admin-center {
-        padding: 15px;
-    }
-    
-    .hap-info-row {
-        flex-direction: column;
-    }
-    
-    .hap-info-label {
-        margin-bottom: 5px;
-    }
-    
-    .hap-requests-table {
-        display: block;
-        overflow-x: auto;
-    }
+  .hap-attributes-grid,
+  .hap-specializations-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+
+  .hap-personal-center,
+  .hap-admin-center {
+    padding: 15px;
+  }
+
+  .hap-info-row {
+    flex-direction: column;
+  }
+
+  .hap-info-label {
+    margin-bottom: 5px;
+  }
+
+  .hap-requests-table {
+    display: block;
+    overflow-x: auto;
+  }
 }
 
 /* 文本输入特定样式 */
 .hap-text-input {
-    color: #000;
-    background-color: #fff;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    width: 100%;
+  color: #000;
+  background-color: #fff;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 100%;
 }
 
 /* 惊吓盒子样式 */
 .hap-shock-box {
-    background-color: #1a1a1a;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 30px;
+  background-color: #1a1a1a;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
 }
 
 .hap-search-box {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 .hap-search-box input[type="text"] {
-    flex: 1;
-    padding: 10px;
-    background-color: #fff;
-    color: #000;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+  flex: 1;
+  padding: 10px;
+  background-color: #fff;
+  color: #000;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
 .hap-search-box select {
-    padding: 10px;
-    background-color: #fff;
-    color: #000;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+  padding: 10px;
+  background-color: #fff;
+  color: #000;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
 .hap-items-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
 }
 
 /* 商品卡片样式 */
 
 .hap-item-card.loading {
-    opacity: 0.7;
-    position: relative;
+  opacity: 0.7;
+  position: relative;
 }
 .hap-loading-bar {
-    height: 4px;
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: loading 1.5s infinite;
+  height: 4px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
 }
 @keyframes loading {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .hap-item-card {
-    background-color: #2a2a2a;
-    padding: 15px;
-    border-radius: 6px;
-    border-left: 4px solid #8b0000;
-    color: #fff; /* 添加白色字体 */
+  background-color: #2a2a2a;
+  padding: 15px;
+  border-radius: 6px;
+  border-left: 4px solid #8b0000;
+  color: #fff; /* 添加白色字体 */
 }
 
 .hap-item-card h4 {
-    margin-top: 0;
-    color: #fff; /* 标题保持红色 */
+  margin-top: 0;
+  color: #fff; /* 标题保持红色 */
 }
 
 .hap-item-card h3 {
-    margin-top: 0;
-    color: #fff; /* 标题保持红色 */
+  margin-top: 0;
+  color: #fff; /* 标题保持红色 */
 }
 
 .hap-item-card h2 {
-    margin-top: 0;
-    color: #fff; /* 标题保持红色 */
+  margin-top: 0;
+  color: #fff; /* 标题保持红色 */
 }
 
 .hap-item-card p {
-    color: #fff; /* 段落字体为白色 */
+  color: #fff; /* 段落字体为白色 */
 }
 
 .hap-item-card .hap-buy-btn {
-    background-color: #8b0000;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s;
+  background-color: #8b0000;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
 
 .hap-item-card .hap-buy-btn:hover {
-    background-color: #6b0000;
+  background-color: #6b0000;
 }
 
 .hap-buy-btn {
-    background-color: #8b0000;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s;
+  background-color: #8b0000;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
 
 .hap-buy-btn:hover {
-    background-color: #6b0000;
+  background-color: #6b0000;
 }
 
 /* 仓库样式 */
 .hap-warehouse {
-    background-color: #1a1a1a;
-    padding: 20px;
-    border-radius: 8px;
+  background-color: #1a1a1a;
+  padding: 20px;
+  border-radius: 8px;
 }
 
 .hap-warehouse-tabs {
-    display: flex;
-    border-bottom: 1px solid #444;
-    margin-bottom: 20px;
+  display: flex;
+  border-bottom: 1px solid #444;
+  margin-bottom: 20px;
 }
 
 .hap-tab-btn {
-    background: none;
-    border: none;
-    padding: 10px 20px;
-    color: #ccc;
-    cursor: pointer;
-    font-size: 16px;
-    position: relative;
+  background: none;
+  border: none;
+  padding: 10px 20px;
+  color: #ccc;
+  cursor: pointer;
+  font-size: 16px;
+  position: relative;
 }
 
 .hap-tab-btn.active {
-    color: #ff4d4d;
-    font-weight: bold;
+  color: #ff4d4d;
+  font-weight: bold;
 }
 
 .hap-tab-btn.active:after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background-color: #8b0000;
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: #8b0000;
 }
 
 .hap-tab-content {
-    display: none;
+  display: none;
 }
 
 .hap-tab-content.active {
-    display: block;
+  display: block;
 }
 
 .hap-inventory-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 15px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
 }
 
 .hap-inventory-item {
-    background-color: #2a2a2a;
-    padding: 15px;
-    border-radius: 6px;
-    border-left: 4px solid #8b0000;
+  background-color: #2a2a2a;
+  padding: 15px;
+  border-radius: 6px;
+  border-left: 4px solid #8b0000;
 }
 
 .hap-custom-badge {
-    display: inline-block;
-    background-color: #8b0000;
-    color: white;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 12px;
+  display: inline-block;
+  background-color: #8b0000;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
 }
 
 /* 自定义道具表单 */
 .hap-form-section {
-    margin-bottom: 15px;
+  margin-bottom: 15px;
 }
 
 .hap-form-section label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #ccc;
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #ccc;
 }
 
 .hap-form-section input[type="text"],
 .hap-form-section input[type="number"],
 .hap-form-section select,
 .hap-form-section textarea {
-    width: 100%;
-    padding: 8px;
-    background-color: #fff;
-    color: #000;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+  width: 100%;
+  padding: 8px;
+  background-color: #fff;
+  color: #000;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-    .hap-items-grid,
-    .hap-inventory-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .hap-search-box {
-        flex-direction: column;
-    }
+  .hap-items-grid,
+  .hap-inventory-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hap-search-box {
+    flex-direction: column;
+  }
 }
