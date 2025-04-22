@@ -18,10 +18,8 @@ class HAP_Item_Manager {
         $this->wpdb = $wpdb;
         $this->tables = [
             'items' => $wpdb->prefix . 'hap_items',
-            'attributes' => $wpdb->prefix . 'hap_item_attributes',
             'equipment' => $wpdb->prefix . 'hap_equipment_specs',
             'skills' => $wpdb->prefix . 'hap_skill_specs',
-            'inventory' => $wpdb->prefix . 'hap_user_inventory',
             'transactions' => $wpdb->prefix . 'hap_transactions'
         ];
     }
@@ -142,20 +140,7 @@ class HAP_Item_Manager {
             'pages' => ceil($total / $args['per_page'])
         ];
     }
-
-    // 添加商品属性
-    public function add_item_attribute($item_id, $type, $key, $value) {
-        return $this->wpdb->insert(
-            $this->tables['attributes'],
-            [
-                'item_id' => $item_id,
-                'attribute_type' => $type,
-                'attribute_key' => $key,
-                'attribute_value' => maybe_serialize($value)
-            ],
-            ['%d', '%s', '%s', '%s']
-        );
-    }
+    
 
     // 获取商品详情
     public function get_item($item_id) {
@@ -168,33 +153,9 @@ class HAP_Item_Manager {
 
         if (!$item) {
             return false;
+        }else {
+            return $item;
         }
-
-        // 获取属性
-        $item->attributes = $this->get_item_attributes($item_id);
-
-        // 获取特殊属性
-        switch ($item->item_type) {
-            case 'equipment':
-                $item->specs = $this->wpdb->get_row(
-                    $this->wpdb->prepare(
-                        "SELECT * FROM {$this->tables['equipment']} WHERE item_id = %d",
-                        $item_id
-                    )
-                );
-                break;
-
-            case 'skill':
-                $item->specs = $this->wpdb->get_row(
-                    $this->wpdb->prepare(
-                        "SELECT * FROM {$this->tables['skills']} WHERE item_id = %d",
-                        $item_id
-                    )
-                );
-                break;
-        }
-
-        return $item;
     }
 
     // 搜索商品
@@ -271,17 +232,6 @@ class HAP_Item_Manager {
                 $item->currency,
                 $user_currency - $item->price
             );
-            
-            // 添加到用户库存
-            $this->wpdb->insert(
-                $this->tables['inventory'],
-                [
-                    'user_id' => $user_id,
-                    'item_id' => $item_id,
-                    'acquired_at' => current_time('mysql')
-                ],
-                ['%d', '%d', '%s']
-            );
 
             // 记录交易
             $this->wpdb->insert(
@@ -291,10 +241,12 @@ class HAP_Item_Manager {
                     'item_id' => $item_id,
                     'amount' => $item->price,
                     'currency' => $item->currency,
-                    'status' => 'completed'
+                    'status' => 'completed',
+                    'acquired_at' => current_time('mysql')
                 ],
-                ['%d', '%d', '%f', '%s', '%s']
+                ['%d', '%d', '%f', '%s', '%s', '%s'] 
             );
+            error_log('完成1.4'); // 调试信息
 
             $this->wpdb->query('COMMIT');
 
@@ -303,77 +255,6 @@ class HAP_Item_Manager {
             $this->wpdb->query('ROLLBACK');
             return new WP_Error('transaction_failed', '交易失败: ' . $e->getMessage());
         }
-    }
-
-    // 获取用户库存
-    public function get_user_inventory($user_id, $args = []) {
-        $defaults = [
-            'type' => '',
-            'page' => 1,
-            'per_page' => 20
-        ];
-
-        $args = wp_parse_args($args, $defaults);
-
-        $join = "JOIN {$this->tables['items']} i ON inv.item_id = i.item_id";
-        $where = ["inv.user_id = %d"];
-        $params = [$user_id];
-
-        if ($args['type']) {
-            $where[] = "i.item_type = %s";
-            $params[] = $args['type'];
-        }
-
-        $where_clause = implode(' AND ', $where);
-        $offset = ($args['page'] - 1) * $args['per_page'];
-
-        $sql = $this->wpdb->prepare(
-            "SELECT inv.*, i.* FROM {$this->tables['inventory']} inv
-            {$join}
-            WHERE {$where_clause}
-            ORDER BY inv.acquired_at DESC
-            LIMIT %d, %d",
-            array_merge($params, [$offset, $args['per_page']])
-        );
-
-        $items = $this->wpdb->get_results($sql);
-
-        // 获取总数
-        $total = $this->wpdb->get_var(
-            $this->wpdb->prepare(
-                "SELECT COUNT(*) FROM {$this->tables['inventory']} inv
-                {$join}
-                WHERE {$where_clause}",
-                $params
-            )
-        );
-
-        return [
-            'items' => $items,
-            'total' => $total,
-            'pages' => ceil($total / $args['per_page'])
-        ];
-    }
-
-    // 辅助方法
-    private function get_item_attributes($item_id) {
-        $attributes = $this->wpdb->get_results(
-            $this->wpdb->prepare(
-                "SELECT * FROM {$this->tables['attributes']} 
-                WHERE item_id = %d",
-                $item_id
-            )
-        );
-
-        $result = [];
-        foreach ($attributes as $attr) {
-            if (!isset($result[$attr->attribute_type])) {
-                $result[$attr->attribute_type] = [];
-            }
-            $result[$attr->attribute_type][$attr->attribute_key] = maybe_unserialize($attr->attribute_value);
-        }
-
-        return $result;
     }
 
     public function update_sales_count($item_id) {

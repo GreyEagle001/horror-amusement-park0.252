@@ -392,7 +392,7 @@ async function fetchFullDetails(baseItems) {
     const formData = new FormData();
     formData.append('action', 'hap_get_full_details');
     formData.append('nonce', hap_ajax.nonce);
-    formData.append('fields', 'item_id,price,currency,effects,name,item_type,quality,value,restrictions,consumption,level,sales_count,created_at,attributes,learning_requirements'); // 需要的字段
+    formData.append('fields', 'item_id,price,currency,effects,name,item_type,quality,restrictions,consumption,level,sales_count,created_at,attributes,learning_requirements,author'); // 需要的字段
 
     baseItems.forEach((item, index) => {
         formData.append(`items[${index}][name]`, item.name);
@@ -530,6 +530,14 @@ function renderFullItems(items) {
             <time datetime="${item.created_at}">
                 上架时间：${item.created_at}
             </time>
+        `);
+
+        // 添加作者
+        footerContent.push(`
+            <div class="author">
+                <i class="author"></i>
+                <span>作者: ${item.author || '无名氏'}</span>
+            </div>
         `);
 
         // 添加购买按钮

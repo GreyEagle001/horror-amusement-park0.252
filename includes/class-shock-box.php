@@ -74,7 +74,7 @@ class HAP_Shock_Box {
                 $select_fields = $requested_fields 
                     ? implode(', ', array_map('sanitize_key', $requested_fields))
                     : 'name, item_type, attributes, quality, restrictions, effects, 
-                       value, price, currency, author, sales_count, level, 
+                       price, currency, author, sales_count, level, 
                        consumption, learning_requirements, created_at';
     
                 $sql = $wpdb->prepare(
@@ -317,7 +317,6 @@ class HAP_Shock_Box {
     
         // 执行查询
         $items = $wpdb->get_results($wpdb->prepare($sql, $params), ARRAY_A);
-        error_log("[SQL调试] 实际执行SQL: " . $wpdb->last_query);
         $total = $wpdb->get_var("SELECT FOUND_ROWS()");
     
         return [
@@ -347,7 +346,11 @@ class HAP_Shock_Box {
         }
 
         $result = $this->item_manager->purchase_item($user_id, $item_id);
-        error_log('result:' . $result); // 调试信息
+        if (is_wp_error($result)) {
+            error_log('购买失败: ' . $result->get_error_message()); // 输出错误信息
+        } else {
+            error_log('购买成功0！'); // 输出成功信息
+        }
          error_log('完成1'); // 调试信息
         if (is_wp_error($result)) {
             wp_send_json_error(['message' => $result->get_error_message()]);

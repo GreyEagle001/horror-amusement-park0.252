@@ -40,12 +40,7 @@ spl_autoload_register(function ($class) {
         require_once $file;
     }
 });
-
-// 确保翻译文件在 init 钩子中加载
-    // function load_xintheme_plugin_textdomain() {
-    //     load_plugin_textdomain( 'horror-amusement-park', false, dirname(plugin_basename(__FILE__)) . '/languages' );
-    // }
-    
+  
 
 
 // 主插件类
@@ -70,7 +65,6 @@ class Horror_Amusement_Park {
         add_action('init', [$this, 'register_post_types'], 0);
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('admin_init', [$this, 'check_requirements']);
-        //add_action( 'init', 'load_xintheme_plugin_textdomain' );
         
         // 添加性能监控
         add_action('shutdown', [$this, 'log_performance']);
@@ -81,7 +75,7 @@ class Horror_Amusement_Park {
     }
 
     private function upgrade_database() {
-        $current_version = get_option('hap_db_version', '1.0');
+        $current_version = get_option('hap_db_version', '1.121');
         
         if (version_compare($current_version, HAP_VERSION, '<')) {
             $this->create_tables();
@@ -159,10 +153,10 @@ class Horror_Amusement_Park {
     private function create_tables() {
         global $wpdb;
         $charset_collate = $wpdb->get_charset_collate();
-        $table_name = "{$wpdb->prefix}hap_items";
     
-        // 阶段1：创建基础表结构（dbDelta兼容格式）
-        $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+       // 创建 hap_items 表
+        $table_name_items = "{$wpdb->prefix}hap_items";
+        $sql_items = "CREATE TABLE IF NOT EXISTS $table_name_items (
             item_id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             item_type enum('consumable','permanent','arrow','bullet','equipment','skill') NOT NULL,
             name varchar(255) NOT NULL,
@@ -170,69 +164,163 @@ class Horror_Amusement_Park {
             quality enum('common','uncommon','rare','epic','legendary') DEFAULT 'common',
             restrictions int(11) DEFAULT NULL,
             effects text DEFAULT NULL,
-            value decimal(10,2) NOT NULL DEFAULT '0.00',
             duration int(11) DEFAULT NULL,
             price decimal(10,2) NOT NULL DEFAULT '0.00',
             currency enum('game_coin','skill_points') NOT NULL DEFAULT 'game_coin',
-            author bigint(20) UNSIGNED NOT NULL,
+            author varchar(20) UNSIGNED NOT NULL,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             sales_count int(11) NOT NULL DEFAULT '0',
             level int(11) DEFAULT NULL,
             consumption decimal(10,2) DEFAULT NULL,
             learning_requirements text DEFAULT NULL,
-            PRIMARY KEY  (item_id)
+            status enum('publish', 'unpublish') NOT NULL DEFAULT 'publish',  -- 新增的状态属性
+            effect_type enum('buff', 'debuff') DEFAULT NULL,  -- 新增的效果类型属性
+            effect_date datetime DEFAULT NULL,  -- 新增的效果日期属性
+            PRIMARY KEY (item_id)
         ) $charset_collate ENGINE=InnoDB AUTO_INCREMENT=2;";
-    
+
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-        dbDelta($sql);
-    
-        // 阶段2：通过ALTER TABLE添加注释
+        dbDelta($sql_items);
+
+        // 添加 hap_items 表字段注释
         $comments = [
-            'item_id' => '商品ID，主键',
-            'item_type' => '商品类型',
-            'name' => '商品名称',
-            'attributes' => '商品属性',
-            'quality' => '商品品质',
-            'restrictions' => '使用限制（整数）',
-            'effects' => '商品特效',
-            'value' => '商品数值',
+            'item_id' => '商品序号，主键',
+            'item_type' => '类型',
+            'name' => '名称',
+            'attributes' => '属性',
+            'quality' => '品质',
+            'restrictions' => '单格携带数量',
+            'effects' => '特效',
             'duration' => '持续时间',
-            'price' => '商品价格',
-            'currency' => '货币类型',
+            'price' => '价格',
+            'currency' => '货币',
             'author' => '作者',
-            'created_at' => '创建时间',
-            'sales_count' => '购买次数',
-            'level' => '技能等级（如果适用）',
-            'consumption' => '技能消耗（如果适用）',
-            'learning_requirements' => '学习条件（如果适用）'
+            'created_at' => '上架时间',
+            'sales_count' => '售出数量',
+            'level' => '可使用等级',
+            'consumption' => '单次使用消耗',
+            'learning_requirements' => '学习条件',
+            'status' => '商品状态（上架/下架）',  // 新增的状态字段注释
+            'effect_type' => '效果类型（削弱/增强）',  // 新增的效果类型字段注释
+            'effect_date' => '效果日期',  // 新增的效果日期字段注释
         ];
     
+        // 添加字段注释
         foreach ($comments as $column => $comment) {
-            $wpdb->query(
-                $wpdb->prepare(
-                    "ALTER TABLE $table_name MODIFY COLUMN %s COMMENT %s",
-                    $column,
-                    $comment
-                )
-            );
+            // 获取列的数据类型
+            $column_info = $wpdb->get_row("SHOW FULL COLUMNS FROM $table_name_items LIKE '$column'", ARRAY_A);
+            if ($column_info) {
+                $column_type = $column_info['Type']; // 获取列的数据类型
+        
+                // 使用 CHANGE 语句来修改列的注释
+                $wpdb->query(
+                    $wpdb->prepare(
+                        "ALTER TABLE $table_name_items CHANGE $column $column $column_type COMMENT %s",
+                        $comment
+                    )
+                );
+                
+            }
+            if ($column_info === false) {
+                error_log("SQL错误: " . $wpdb->last_error);
+            }
         }
+        error_log('购买更新数据库！'); // 输出成功信息
+        error_log("[SQL调试] 实际执行SQL: " . $wpdb->last_query);
     
-        // 阶段3：添加表注释
-        $wpdb->query("ALTER TABLE $table_name COMMENT '商品表，用于存储游戏内商品信息'");
+        // 添加表注释
+        $wpdb->query("ALTER TABLE $table_name_items COMMENT '商品表，用于存储游戏内商品信息'");
+    
+        // 创建 hap_warehouse 表
+        $table_name_warehouse = "{$wpdb->prefix}hap_warehouse";
+        $sql_warehouse = "CREATE TABLE IF NOT EXISTS $table_name_warehouse (
+            id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            item_id int(11) NOT NULL,
+            quantity int(11) NOT NULL,
+            purchase_price decimal(10,2) NOT NULL DEFAULT '0.00',
+            currency enum('game_coin','skill_points') NOT NULL DEFAULT 'game_coin',
+            PRIMARY KEY (id)
+        ) $charset_collate ENGINE=InnoDB AUTO_INCREMENT=1;";
+    
+        dbDelta($sql_warehouse);
+    
+        // 添加 hap_warehouse 表字段注释
+        $comments_warehouse = [
+            'id' => '主键，自增长',
+            'item_id' => '商品序号',
+            'quantity' => '数量',
+            'purchase_price' => '购买时价格',
+            'currency' => '货币类型'
+        ];
+    
+        foreach ($comments_warehouse as $column => $comment) {
+            // 获取列的数据类型
+            $column_info = $wpdb->get_row("SHOW FULL COLUMNS FROM $table_name_warehouse LIKE '$column'", ARRAY_A);
+            if ($column_info) {
+                $column_type = $column_info['Type']; // 获取列的数据类型
+        
+                // 使用 CHANGE 语句来修改列的注释
+                $wpdb->query(
+                    $wpdb->prepare(
+                        "ALTER TABLE $table_name_warehouse CHANGE $column $column $column_type COMMENT %s",
+                        $comment
+                    )
+                );
+            }
+        }
+        
+    
+        // 添加表注释
+        $wpdb->query("ALTER TABLE $table_name_warehouse COMMENT '仓库表，用于存储物品库存信息'");
+
+        // 创建 hap_transactions 表
+        $table_name_transactions = "{$wpdb->prefix}hap_transactions";
+        $sql_transactions = "CREATE TABLE IF NOT EXISTS $table_name_transactions (
+            id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            user_id bigint(20) UNSIGNED NOT NULL,
+            item_id int(11) NOT NULL,
+            amount decimal(10,2) NOT NULL DEFAULT '0.00',
+            currency enum('game_coin','skill_points') NOT NULL DEFAULT 'game_coin',
+            status enum('completed', 'pending', 'failed') NOT NULL DEFAULT 'completed',
+            acquired_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id)
+        ) $charset_collate ENGINE=InnoDB AUTO_INCREMENT=1;";
+
+        dbDelta($sql_transactions);
+
+        // 添加 hap_transactions 表字段注释
+        $comments_transactions = [
+            'id' => '主键，自增长',
+            'user_id' => '用户序号',
+            'item_id' => '商品序号',
+            'amount' => '交易金额',
+            'currency' => '货币类型',
+            'status' => '交易状态',
+            'acquired_at' => '获取时间'
+        ];
+
+        foreach ($comments_transactions as $column => $comment) {
+            // 获取列的数据类型
+            $column_info = $wpdb->get_row("SHOW FULL COLUMNS FROM $table_name_transactions LIKE '$column'", ARRAY_A);
+            if ($column_info) {
+                $column_type = $column_info['Type']; // 获取列的数据类型
+        
+                // 使用 CHANGE 语句来修改列的注释
+                $wpdb->query(
+                    $wpdb->prepare(
+                        "ALTER TABLE $table_name_transactions CHANGE $column $column $column_type COMMENT %s",
+                        $comment
+                    )
+                );
+            }
+        }
+
+        // 添加表注释
+        $wpdb->query("ALTER TABLE $table_name_transactions COMMENT '交易表，用于存储用户交易信息'");
     
         return ($wpdb->last_error === '');
     }
     
-
-    public function update_sales_count($item_id) {
-        global $wpdb;
-    
-        // 更新销售次数
-        $wpdb->query($wpdb->prepare(
-            "UPDATE {$wpdb->prefix}hap_items SET sales_count = sales_count + 1 WHERE item_id = %d",
-            $item_id
-        ));
-    }
 
     public function add_admin_menu() {
         add_menu_page(
