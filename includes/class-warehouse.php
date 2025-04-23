@@ -19,7 +19,9 @@ class HAP_Warehouse
         $this->item_manager = HAP_Item_Manager::init();
         add_shortcode('warehouse', [$this, 'render_warehouse']);
         add_action('wp_ajax_hap_get_inventory', [$this, 'ajax_get_inventory']);
-    }
+        add_action('wp_ajax_hap_save_custom_items', [$this, 'ajax_save_custom_items']);
+        add_action('wp_ajax_nopriv_hap_save_custom_items', [$this, 'ajax_save_custom_items']);
+            }
 
     public function render_warehouse()
     {
@@ -27,7 +29,7 @@ class HAP_Warehouse
             return '<div class="hap-notice">请登录后访问仓库</div>';
         }
 
-        ob_start();
+        
 ?>
         <div class="hap-warehouse-container">
             <div class="hap-warehouse-tabs">
@@ -55,7 +57,36 @@ class HAP_Warehouse
 
             <div class="hap-tab-content" id="hap-custom-tab">
                 <h3>自定义道具</h3>
-                <?php $this->render_custom_item_form(); ?>
+                <div class="hap-custom-item-container">
+            <h4>添加自定义道具</h4>
+            <div class="hap-custom-item-filters">
+                <input type="text" id="hap-custom-item-name" placeholder="请输入道具名称" required>
+                <select id="hap-custom-item-type" required>
+                    <option value="">选择道具类型</option>
+                    <option value="consumable">消耗道具</option>
+                    <option value="permanent">永久道具</option>
+                    <option value="arrow">箭矢</option>
+                    <option value="bullet">子弹</option>
+                    <option value="equipment">装备</option>
+                    <option value="skill">法术</option>
+                </select>
+                <select id="hap-custom-item-quality" required>
+                    <option value="">选择道具品质</option>
+                    <option value="common">普通</option>
+                    <option value="uncommon">精良</option>
+                    <option value="rare">稀有</option>
+                    <option value="epic">史诗</option>
+                    <option value="legendary">传说</option>
+                </select>
+                <button id="hap-custom-item-save-btn" class="hapcustom-item-save-button">保存道具</button>
+            </div>
+    
+            <div class="hap-custom-item-grid" id="hap-custom-item-container">
+                <!-- 自定义道具列表将在此显示 -->
+            </div>
+    
+            <div class="hap-custom-item-pagination" id="hap-custom-items-pagination"></div>
+        </div>
             </div>
         </div>
     <?php
@@ -109,11 +140,6 @@ class HAP_Warehouse
             FROM {$wpdb->prefix}hap_items AS i
             WHERE i.item_id IN ($placeholders)
         ";
-        error_log('$args: ' . json_encode($args['type'], JSON_PRETTY_PRINT));
-        
-        
-        error_log('$type: ' . json_encode($type, JSON_PRETTY_PRINT));
-        error_log('$page: ' . json_encode($page, JSON_PRETTY_PRINT));
 
         // 添加类型筛选条件
         if (!empty($type)) {
@@ -147,8 +173,6 @@ class HAP_Warehouse
             ($page - 1) * $per_page,
             $per_page
         );
-
-        error_log('paginated_items: ' . json_encode($paginated_items, JSON_PRETTY_PRINT));
     
         return [
             'items' => $paginated_items,
@@ -201,7 +225,6 @@ class HAP_Warehouse
 
     public function ajax_get_inventory() {
         check_ajax_referer('hap-nonce', 'nonce');
-        error_log('仓库搜索1');
 
         $request = array_map('wp_unslash', $_POST);
 
@@ -224,7 +247,6 @@ class HAP_Warehouse
                     }
                 }
             }
-            error_log('$dataItems: ' . json_encode($dataItems, JSON_PRETTY_PRINT));
     
             wp_send_json_success([
                 'items' => $dataItems,
@@ -238,43 +260,59 @@ class HAP_Warehouse
         }
     }
     
-
-    private function render_custom_item_form()
-    {
-    ?>
-        <form id="hap-custom-item-form" class="hap-form">
-            <?php wp_nonce_field('hap_create_custom_item', 'hap_nonce'); ?>
-
-            <div class="hap-form-group">
-                <label for="hap-custom-item-name">道具名称</label>
-                <input type="text" id="hap-custom-item-name" name="name" required>
-            </div>
-
-            <div class="hap-form-group">
-                <label for="hap-custom-item-type">道具类型</label>
-                <select id="hap-custom-item-type" name="item_type" required>
-                    <option value="">选择类型</option>
-                    <option value="consumable">消耗道具</option>
-                    <option value="permanent">永久道具</option>
-                    <option value="arrow">箭矢</option>
-                    <option value="bullet">子弹</option>
-                    <option value="equipment">装备</option>
-                    <option value="skill">法术</option>
-                </select>
-            </div>
-
-            <div id="hap-custom-item-fields">
-                <!-- 动态字段将通过JavaScript加载 -->
-            </div>
-
-            <button type="submit" class="hap-button">创建道具</button>
-        </form>
-<?php
+    // 处理 AJAX 表单提交
+    public function ajax_save_custom_items() {
+        check_ajax_referer('hap-nonce', 'nonce');
+        error_log('[HAP DEBUG] AJAX save initiated - ' . current_time('mysql'));
+    
+        $request = array_map('wp_unslash', $_POST);
+        $args = [
+            'name'        => !empty($request['name']) ? sanitize_text_field($request['name']) : '',
+            'item_type'   => ($request['item_type'] ?? '') === '*' ? '' : sanitize_text_field($request['item_type'] ?? ''),
+            'quality'     => ($request['quality'] ?? '') === '*' ? '' : sanitize_text_field($request['quality'] ?? ''),
+        ];
+    
+        try {
+            $results = $this->save_custom_items($args);
+    
+            // 结构标准化输出
+            wp_send_json([
+                'success' => true,
+                'items' => array_values($results['items'] ?? []),
+                'pagination' => $results['pagination'] ?? [
+                    'total' => 0
+                ],
+            ]);
+        } catch (Exception $e) {
+            wp_send_json_error([
+                'message' => __('保存失败，请稍后重试', 'hap'),
+                'code'    => uniqid('HAP_ERR_')
+            ], 500);
+        }
     }
 
-    // 辅助方法（与Shock_Box类中的相同）
-    private function get_type_name($type)
-    {
+// 后端新增 AJAX 接口
+public function ajax_get_custom_items() {
+    global $wpdb;
+    check_ajax_referer('hap-nonce', 'nonce');
+    $items = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}hap_custom_items WHERE user_id = " . get_current_user_id());
+    wp_send_json_success(['items' => $items]);
+}
+
+    // 辅助方法
+
+    private function save_custom_items($args) {
+        global $wpdb;
+        $wpdb->insert("{$wpdb->prefix}hap_custom_items", [
+            'user_id' => get_current_user_id(),
+            'name' => $args['name'],
+            'item_type' => $args['item_type'],
+            'quality' => $args['quality'],
+            'created_at' => current_time('mysql')
+        ]);
+        return ['items' => [$wpdb->insert_id]];
+    }
+    private function get_type_name($type) {
         $types = [
             'consumable' => '消耗道具',
             'permanent' => '永久道具',
@@ -286,8 +324,7 @@ class HAP_Warehouse
         return $types[$type] ?? $type;
     }
 
-    private function get_quality_name($quality)
-    {
+    private function get_quality_name($quality) {
         $qualities = [
             'common' => '普通',
             'uncommon' => '精良',

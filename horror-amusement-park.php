@@ -177,7 +177,7 @@ class Horror_Amusement_Park
             duration int(11) DEFAULT NULL,
             price decimal(10,2) NOT NULL DEFAULT '0.00',
             currency enum('game_coin','skill_points') NOT NULL DEFAULT 'game_coin',
-            author varchar(20) UNSIGNED NOT NULL,
+            author varchar(20) NOT NULL,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             sales_count int(11) NOT NULL DEFAULT '0',
             level int(11) DEFAULT NULL,
@@ -328,6 +328,85 @@ class Horror_Amusement_Park
 
         // 添加表注释
         $wpdb->query("ALTER TABLE $table_name_transactions COMMENT '交易表，用于存储用户交易信息'");
+
+        // 创建 hap_custom_items 表
+        $table_name_items = "{$wpdb->prefix}hap_custom_items";
+        $sql_items = "CREATE TABLE IF NOT EXISTS $table_name_items (
+            item_id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            user_id bigint(20) UNSIGNED NOT NULL,
+            item_type enum('consumable','permanent','arrow','bullet','equipment','skill') NOT NULL,
+            name varchar(255) NOT NULL,
+            attributes text DEFAULT NULL,
+            quality enum('common','uncommon','rare','epic','legendary') DEFAULT 'common',
+            restrictions int(11) DEFAULT NULL,
+            effects text DEFAULT NULL,
+            duration int(11) DEFAULT NULL,
+            price decimal(10,2) NOT NULL DEFAULT '0.00',
+            currency enum('game_coin','skill_points') NOT NULL DEFAULT 'game_coin',
+            author varchar(20) NOT NULL,
+            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            sales_count int(11) NOT NULL DEFAULT '0',
+            level int(11) DEFAULT NULL,
+            consumption decimal(10,2) DEFAULT NULL,
+            learning_requirements text DEFAULT NULL,
+            status enum('publish', 'unpublish') NOT NULL DEFAULT 'publish',
+            adjust_type enum('buff', 'debuff') DEFAULT NULL,
+            adjust_date datetime DEFAULT NULL,
+            PRIMARY KEY (item_id)
+        ) $charset_collate ENGINE=InnoDB AUTO_INCREMENT=2;";
+
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        dbDelta($sql_items);
+
+        // 添加 hap_custom_items 表字段注释
+        $comments = [
+            'item_id' => '道具序号，主键',
+            'user_id' => '用户序号',
+            'item_type' => '类型',
+            'name' => '名称',
+            'attributes' => '属性',
+            'quality' => '品质',
+            'restrictions' => '单格携带数量',
+            'effects' => '特效',
+            'duration' => '持续时间',
+            'price' => '价格',
+            'currency' => '货币',
+            'author' => '作者',
+            'created_at' => '创建时间',
+            'sales_count' => '售出数量',
+            'level' => '可使用等级',
+            'consumption' => '单次使用消耗',
+            'learning_requirements' => '学习条件',
+            'status' => '商品状态（上架/下架）',
+            'adjust_type' => '效果类型（削弱/增强）',
+            'adjust_date' => '效果日期', 
+        ];
+
+        // 添加字段注释
+        foreach ($comments as $column => $comment) {
+            // 获取列的数据类型
+            $column_info = $wpdb->get_row("SHOW FULL COLUMNS FROM $table_name_items LIKE '$column'", ARRAY_A);
+            if ($column_info) {
+                $column_type = $column_info['Type']; // 获取列的数据类型
+
+                // 使用 CHANGE 语句来修改列的注释
+                $wpdb->query(
+                    $wpdb->prepare(
+                        "ALTER TABLE $table_name_items CHANGE $column $column $column_type COMMENT %s",
+                        $comment
+                    )
+                );
+            }
+            if ($column_info === false) {
+                error_log("SQL错误: " . $wpdb->last_error);
+            }
+        }
+        error_log('购买更新数据库！'); // 输出成功信息
+        error_log("[SQL调试] 实际执行SQL: " . $wpdb->last_query);
+
+        // 添加表注释
+        $wpdb->query("ALTER TABLE $table_name_items COMMENT '商品表，用于存储游戏内商品信息'");
+
 
         return ($wpdb->last_error === '');
     }

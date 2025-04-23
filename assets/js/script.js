@@ -707,7 +707,7 @@ jQuery(document).ready(function ($) {
       }
     });
 
-    //loadInventory(1);
+    loadInventory(1);
     
     // 搜索功能
     $("#hap-warehouse-search-btn").on("click", () => {
@@ -739,15 +739,12 @@ if (typeof Promise.prototype.finally === 'undefined') {
 
 function loadInventory(page) {
   const $container = $('#hap-inventory-container');
-  console.log("$container.data1:", $container.data("loading"));
 
   // 1. 防止重复加载
   if ($container.data("loading")) return;
   $container
     .data("loading", true)
     .html('<div class="hap-loading">加载库存数据中...</div>');
-
-  console.log("$container.data2:", $container.data("loading"));
 
   // 2. 构造查询参数（自动过滤空值）
   const searchParams = {
@@ -777,8 +774,6 @@ function loadInventory(page) {
           if (!response || !response.success) {
             throw new Error(response?.data || "无效的响应数据");
           }
-          console.log("进度8");
-          console.log("response.data.items:", response); 
           renderInventory(response.data.items);
         } catch (syncError) {
           console.error("渲染错误:", syncError);
@@ -786,17 +781,12 @@ function loadInventory(page) {
         }
       })
       .catch((error) => {
-        console.log("进度9");
         const errorMsg = error instanceof Error ? error.message : String(error);
         $container.html(`<div class="hap-error">${errorMsg}</div>`);
       })
       .finally(() => {
-        console.log("进度10");
         $container.data("loading", false);
-        console.log("$container.data4:", $container.data("loading"));
       });
-      console.log("进度11");
-      console.log("$container.data3:", $container.data("loading"));
   }
 
   function renderInventory(items) {
@@ -881,48 +871,74 @@ function loadInventory(page) {
     $container.append(fragment);
   }
 
+  $(document).ready(function() {
+    // 绑定保存按钮点击事件
+    $("#hap-custom-item-save-btn").on("click", function(e) {
+        e.preventDefault(); // 阻止默认行为
+        saveCustomItem(); // 调用保存函数
+    });
+});
 
-  function loadItemFormFields(itemType) {
-    const $container = $("#hap-item-form-fields");
-    $container.html('<div class="hap-loading">加载表单...</div>');
+function saveCustomItem() {
+  const searchParams = {
+      action: "hap_save_custom_items", // 确保这个动作与后端处理匹配
+      nonce: hap_ajax.nonce, // 验证nonce
+      name: $("#hap-custom-item-name").val().trim(), // 获取道具名称
+      item_type: $("#hap-custom-item-type").val(), // 获取道具类型
+      quality: $("#hap-custom-item-quality").val(), // 获取道具品质
+  };
 
-    // 这里可以根据不同类型加载不同的表单字段
-    // 示例代码，实际需要根据需求实现
-    let html = `
-            <div class="hap-form-section">
-                <label>道具名称</label>
-                <input type="text" name="name" required>
-            </div>
-        `;
+  // 清理空参数
+  Object.keys(searchParams).forEach((key) => {
+      if (!searchParams[key]) {
+          delete searchParams[key]; // 删除空值参数
+      }
+  });
 
-    switch (itemType) {
-      case "equipment":
-        html += `
-                    <div class="hap-form-section">
-                        <label>装备属性</label>
-                        <textarea name="attributes" rows="3"></textarea>
-                    </div>
-                `;
-        break;
-      case "skill":
-        html += `
-                    <div class="hap-form-section">
-                        <label>法术等级</label>
-                        <input type="number" name="level" min="1" max="10">
-                    </div>
-                `;
-        break;
-      default:
-        html += `
-                    <div class="hap-form-section">
-                        <label>特效描述</label>
-                        <textarea name="effect" rows="3"></textarea>
-                    </div>
-                `;
-    }
+  // 发送保存请求
+  $.post(hap_ajax.ajax_url, searchParams)
+      .done((baseResponse) => {
+          if (baseResponse.success) {
+              alert('道具保存成功！');
+              
+              // 清空输入框
+              $("#hap-custom-item-name").val('');
+              $("#hap-custom-item-type").val('consumable'); // 重置类型选择
+              $("#hap-custom-item-quality").val('common'); // 重置品质选择
+              
+              // 可选：在这里调用一个方法来更新道具列表
+              loadCustomItems(); // 重新加载道具列表
+          } else {
+              alert('保存失败：' + baseResponse.data.message);
+          }
+      })
+      .fail((jqXHR, textStatus, errorThrown) => {
+          console.error("[HAP] 数据异常:", textStatus, errorThrown);
+          
+          // 错误降级处理
+          const $container = $("#hap-custom-item-container");
+          $container.html(
+              `
+              <div class="hap-error">
+                  <i class="icon-warning"></i>
+                  道具保存失败: ${errorThrown}
+                  <button class="hap-retry-btn">重试</button>
+              </div>
+              `
+          ).find(".hap-retry-btn").click(() => {
+              saveCustomItem(); // 重新尝试保存
+          });
+      });
+}
 
-    $container.html(html);
-  }
+function loadCustomItems() {
+  $.post(hap_ajax.ajax_url, {
+      action: 'hap_get_custom_items',
+      nonce: hap_ajax.nonce
+  }).done(response => {
+      $('#hap-custom-item-container').html(renderItems(response.data.items));
+  });
+}
 
   function submitCustomItemForm($form) {
     const $btn = $form.find(".hap-submit");

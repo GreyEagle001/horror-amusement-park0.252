@@ -139,7 +139,6 @@ class HAP_Shock_Box
         ob_start();
 ?>
         <div class="hap-shock-box-container">
-            <h2>惊吓盒子</h2>
 
             <div class="hap-item-filters">
                 <input type="text" id="hap-item-search" placeholder="搜索道具名称...">
