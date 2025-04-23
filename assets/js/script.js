@@ -770,9 +770,7 @@ function loadInventory(page) {
 
   // 4. 使用Promise.resolve适配缓存层
   Promise.resolve(
-    hapCacheRequest("user_inventory", () => 
-      $.post(hap_ajax.ajax_url, searchParams)
-    )
+    Promise.resolve($.post(hap_ajax.ajax_url, searchParams))
   )
     .then((response) => {
         try {

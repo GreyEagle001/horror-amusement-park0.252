@@ -203,11 +203,13 @@ class HAP_Warehouse
         check_ajax_referer('hap-nonce', 'nonce');
         error_log('仓库搜索1');
 
+        $request = array_map('wp_unslash', $_POST);
+
         try {
             $args = [
-                'type' => sanitize_text_field($_POST['type'] ?? ''),
-                'page' => max(1, absint($_POST['page'] ?? 1)),
-                'per_page' => 12
+                'type'        => !empty($request['type']) ? sanitize_text_field($request['type']) : '',
+                'page'        => max(1, absint($request['page'] ?? 1)),
+            'per_page'    => min(50, absint($request['per_page'] ?? 12)),
             ];
     
             // 获取原始数据
