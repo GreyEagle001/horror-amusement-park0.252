@@ -109,7 +109,12 @@ class HAP_Warehouse
             FROM {$wpdb->prefix}hap_items AS i
             WHERE i.item_id IN ($placeholders)
         ";
-    
+        error_log('$args: ' . json_encode($args['type'], JSON_PRETTY_PRINT));
+        
+        
+        error_log('$type: ' . json_encode($type, JSON_PRETTY_PRINT));
+        error_log('$page: ' . json_encode($page, JSON_PRETTY_PRINT));
+
         // 添加类型筛选条件
         if (!empty($type)) {
             $items_query .= " AND i.item_type = %s";
@@ -196,7 +201,8 @@ class HAP_Warehouse
 
     public function ajax_get_inventory() {
         check_ajax_referer('hap-nonce', 'nonce');
-    
+        error_log('仓库搜索1');
+
         try {
             $args = [
                 'type' => sanitize_text_field($_POST['type'] ?? ''),

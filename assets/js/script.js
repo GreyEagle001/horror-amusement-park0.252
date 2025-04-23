@@ -21,7 +21,6 @@ jQuery(document).ready(function ($) {
       if ($(".hap-item-filters").length) {
         // 检索全局中是否有hap-shock-box-container容器或父元素
         initShockBox();
-        loadItems(1); // 初始加载第一页
         console.log("惊吓盒子初始化成功"); // 调试信息
       }
       if ($(".hap-warehouse-container").length) {
@@ -267,7 +266,9 @@ jQuery(document).ready(function ($) {
     });
 
     // 页面加载时触发一次 loadItems(1);
+    console.log("盒子1");
     loadItems(1);
+    console.log("盒子2");
 
     // 购买功能
     $("#hap-items-container").on("click", ".hap-buy-btn", function () {
@@ -706,16 +707,13 @@ jQuery(document).ready(function ($) {
       }
     });
 
-    loadInventory(1);
+    //loadInventory(1);
     
     // 搜索功能
     $("#hap-warehouse-search-btn").on("click", () => {
       console.log("搜索按钮被点击"); // 调试信息
       loadInventory(1); // 点击后加载第一页搜索结果
-    });
-
-    // 页面加载时触发一次 loadItems(1);
-    
+    });    
 
     // 动态表单字段
     $("#hap-item-type-select").on("change", function () {
@@ -739,37 +737,50 @@ if (typeof Promise.prototype.finally === 'undefined') {
   };
 }
 
-  function loadInventory(page) {
-    const $container = $('#hap-inventory-container');
-    console.log("进度1");
-    console.log($("#hap-inventory-type").val());
-    
-    // 确保hapCacheRequest返回真正的Promise
-    const inventoryPromise = new Promise((resolve, reject) => {
-      hapCacheRequest("user_inventory", () =>
-        $.post(hap_ajax.ajax_url, {
-          action: "hap_get_inventory",
-          nonce: hap_ajax.nonce,
-          page: page,
-          per_page: 20,
-          item_type: $("#hap-inventory-type").val() !== "*" 
-                   ? $("#hap-inventory-type").val() 
-                   : undefined
-        })
-        .then(resolve)
-        .catch(reject)
-      );
-    });
-    console.log("进度2");
-  
-    inventoryPromise
-      .then((response) => {
-        console.log("response:", response); 
+function loadInventory(page) {
+  const $container = $('#hap-inventory-container');
+  console.log("$container.data1:", $container.data("loading"));
+
+  // 1. 防止重复加载
+  if ($container.data("loading")) return;
+  $container
+    .data("loading", true)
+    .html('<div class="hap-loading">加载库存数据中...</div>');
+
+  console.log("$container.data2:", $container.data("loading"));
+
+  // 2. 构造查询参数（自动过滤空值）
+  const searchParams = {
+    action: "hap_get_inventory",
+    nonce: hap_ajax.nonce,
+    page: page,
+    per_page: 20,
+    type: $("#hap-inventory-type").val()
+     !== "*" 
+             ? $("#hap-inventory-type").val() 
+             : undefined,
+             _: new Date().getTime() // 添加时间戳
+  };
+  console.log("hap-inventory-type:", $("#hap-inventory-type").val()); 
+
+  // 3. 清理空参数（优化版）
+  Object.keys(searchParams).forEach((key) => {
+    searchParams[key] === undefined && delete searchParams[key];
+  });
+
+  // 4. 使用Promise.resolve适配缓存层
+  Promise.resolve(
+    hapCacheRequest("user_inventory", () => 
+      $.post(hap_ajax.ajax_url, searchParams)
+    )
+  )
+    .then((response) => {
         try {
           if (!response || !response.success) {
             throw new Error(response?.data || "无效的响应数据");
           }
           console.log("进度8");
+          console.log("response.data.items:", response); 
           renderInventory(response.data.items);
         } catch (syncError) {
           console.error("渲染错误:", syncError);
@@ -784,8 +795,10 @@ if (typeof Promise.prototype.finally === 'undefined') {
       .finally(() => {
         console.log("进度10");
         $container.data("loading", false);
+        console.log("$container.data4:", $container.data("loading"));
       });
       console.log("进度11");
+      console.log("$container.data3:", $container.data("loading"));
   }
 
   function renderInventory(items) {
