@@ -39,7 +39,7 @@ class HAP_Warehouse
                 <h3>我的仓库</h3>
                 <div class="hap-inventory-filters">
                     <select id="hap-inventory-type">
-                        <option value="">所有类型</option>
+                        <option value="*">所有类型</option>
                         <option value="consumable">消耗道具</option>
                         <option value="permanent">永久道具</option>
                         <option value="arrow">箭矢</option>
@@ -48,6 +48,7 @@ class HAP_Warehouse
                         <option value="skill">法术</option>
                     </select>
                 </div>
+                <button id="hap-warehouse-search-btn" class="hap-button">搜索</button>
                 <div class="hap-inventory-grid" id="hap-inventory-container">
                 </div>
             </div>

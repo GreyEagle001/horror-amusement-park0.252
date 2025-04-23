@@ -26,7 +26,6 @@ jQuery(document).ready(function ($) {
       }
       if ($(".hap-warehouse-container").length) {
         initWarehouse();
-        loadInventory(); // 初始加载库存
         console.log("仓库初始化成功"); // 调试信息
       }
       if ($(".hap-admin-center").length) {
@@ -45,11 +44,6 @@ jQuery(document).ready(function ($) {
   function initAdminCenter() {
     console.log("管理员中心已初始化");
   }
-
-  function loadInventory() {
-    console.log("加载库存");
-  }
-
   $(document).ready(function () {
     initModules();
   });
@@ -274,18 +268,6 @@ jQuery(document).ready(function ($) {
 
     // 页面加载时触发一次 loadItems(1);
     loadItems(1);
-
-    $("#hap-item-search").on("input", () => {
-      console.log("输入框内容变化"); // 调试信息
-      hapDebounce(
-        "item_search",
-        () => {
-          console.log("防抖函数被触发"); // 调试信息
-          loadItems(1);
-        },
-        500
-      );
-    });
 
     // 购买功能
     $("#hap-items-container").on("click", ".hap-buy-btn", function () {
@@ -720,9 +702,20 @@ jQuery(document).ready(function ($) {
       $(`#hap-${tab}-tab`).addClass("active");
 
       if (tab === "inventory") {
-        loadInventory();
+        loadInventory(1);
       }
     });
+
+    loadInventory(1);
+    
+    // 搜索功能
+    $("#hap-warehouse-search-btn").on("click", () => {
+      console.log("搜索按钮被点击"); // 调试信息
+      loadInventory(1); // 点击后加载第一页搜索结果
+    });
+
+    // 页面加载时触发一次 loadItems(1);
+    
 
     // 动态表单字段
     $("#hap-item-type-select").on("change", function () {
@@ -736,41 +729,63 @@ jQuery(document).ready(function ($) {
     });
   }
 
+// 确保Promise.finally在旧浏览器中可用
+if (typeof Promise.prototype.finally === 'undefined') {
+  Promise.prototype.finally = function(callback) {
+    return this.then(
+      value => Promise.resolve(callback()).then(() => value),
+      reason => Promise.resolve(callback()).then(() => { throw reason })
+    );
+  };
+}
+
   function loadInventory(page) {
-    const $container = $("#hap-inventory-container");
-    if ($container.data("loading")) return;
-
-    $container
-      .data("loading", true)
-      .html('<div class="hap-loading">加载中...</div>');
-
-    hapCacheRequest("user_inventory", () =>
-      $.post(hap_ajax.ajax_url, {
-        action: "hap_get_inventory",
-        nonce: hap_ajax.nonce,
-        page: page,
-        per_page: 20,
-        item_type:
-          $("#hap-inventory-type").val() !== "*"
-            ? $("#hap-inventory-type").val()
-            : undefined,
-      })
-    )
+    const $container = $('#hap-inventory-container');
+    console.log("进度1");
+    console.log($("#hap-inventory-type").val());
+    
+    // 确保hapCacheRequest返回真正的Promise
+    const inventoryPromise = new Promise((resolve, reject) => {
+      hapCacheRequest("user_inventory", () =>
+        $.post(hap_ajax.ajax_url, {
+          action: "hap_get_inventory",
+          nonce: hap_ajax.nonce,
+          page: page,
+          per_page: 20,
+          item_type: $("#hap-inventory-type").val() !== "*" 
+                   ? $("#hap-inventory-type").val() 
+                   : undefined
+        })
+        .then(resolve)
+        .catch(reject)
+      );
+    });
+    console.log("进度2");
+  
+    inventoryPromise
       .then((response) => {
-        if (response.success) {
-          console.log("response:", response);
-          console.log("items1:", response.items);
+        console.log("response:", response); 
+        try {
+          if (!response || !response.success) {
+            throw new Error(response?.data || "无效的响应数据");
+          }
+          console.log("进度8");
           renderInventory(response.data.items);
-        } else {
-          throw new Error(response.data || "加载失败");
+        } catch (syncError) {
+          console.error("渲染错误:", syncError);
+          throw syncError; // 传递给catch块
         }
       })
       .catch((error) => {
-        $container.html(`<div class="hap-error">${error.message}</div>`);
+        console.log("进度9");
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        $container.html(`<div class="hap-error">${errorMsg}</div>`);
       })
       .finally(() => {
+        console.log("进度10");
         $container.data("loading", false);
       });
+      console.log("进度11");
   }
 
   function renderInventory(items) {
