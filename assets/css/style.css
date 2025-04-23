@@ -543,3 +543,13 @@
     flex-direction: column;
   }
 }
+
+/* 设置主容器内所有文本为白色 */
+.hap-item-meta{
+    color: white !important;
+}
+
+.hap-item-info h4 {
+  margin-top: 0;
+  color: #fff; /* 标题保持白色 */
+}

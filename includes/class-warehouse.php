@@ -104,7 +104,7 @@ class HAP_Warehouse
             SELECT 
                 i.item_id, i.item_type, i.name, i.attributes, i.quality,
                 i.restrictions, i.effects, i.duration, i.price, i.author,
-                i.created_at, i.level, i.consumption, i.learning_requirements
+                i.created_at, i.level, i.consumption, i.learning_requirements,i.adjust_type,i.adjust_date
             FROM {$wpdb->prefix}hap_items AS i
             WHERE i.item_id IN ($placeholders)
         ";
@@ -133,8 +133,6 @@ class HAP_Warehouse
                 );
             }
         }
-        error_log('item: ' . json_encode($item, JSON_PRETTY_PRINT));
-        error_log('merged_items: ' . json_encode($merged_items, JSON_PRETTY_PRINT));
     
         // 分页处理
         $total_items = count($merged_items);
@@ -177,16 +175,18 @@ class HAP_Warehouse
             'purchase_price' => floatval($item['purchase_price'] ?? 0),
             'currency'       => esc_html($item['currency'] ?? 'game_coin'),
             'quantity'       => intval($item['quantity'] ?? 1),
-            'sales_count'    => intval($item['sales_count'] ?? 0), // 历史兼容字段
     
             // 游戏机制
             'effects'               => esc_html($item['effects'] ?? '无效果'),
             'attributes'            => esc_html($item['attributes'] ?? '无属性'),
             'restrictions'          => esc_html($item['restrictions'] ?? '无限制'),
-            'duration'              => intval($item['duration'] ?? 0),
+            'duration'              => ($item['duration'] !== null) ? intval($item['duration']) : null, //$number = 
             'level'                 => $item['level'] ?? null,
             'consumption'           => $item['consumption'] ?? null,
-            'learning_requirements' => $item['learning_requirements'] ?? null
+            'learning_requirements' => $item['learning_requirements'] ?? null,
+            'adjust_type' => $item['adjust_type'] ?? null,
+            'adjust_date' => isset($item['adjust_date']) ? (new DateTime($item['adjust_date']))->format('Y-m-d') : null
+
         ];
     }
     
@@ -215,6 +215,7 @@ class HAP_Warehouse
                     }
                 }
             }
+            error_log('$dataItems: ' . json_encode($dataItems, JSON_PRETTY_PRINT));
     
             wp_send_json_success([
                 'items' => $dataItems,

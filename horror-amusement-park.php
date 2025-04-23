@@ -184,8 +184,8 @@ class Horror_Amusement_Park
             consumption decimal(10,2) DEFAULT NULL,
             learning_requirements text DEFAULT NULL,
             status enum('publish', 'unpublish') NOT NULL DEFAULT 'publish',  -- 新增的状态属性
-            effect_type enum('buff', 'debuff') DEFAULT NULL,  -- 新增的效果类型属性
-            effect_date datetime DEFAULT NULL,  -- 新增的效果日期属性
+            adjust_type enum('buff', 'debuff') DEFAULT NULL,  -- 新增的效果类型属性
+            adjust_date datetime DEFAULT NULL,  -- 新增的效果日期属性
             PRIMARY KEY (item_id)
         ) $charset_collate ENGINE=InnoDB AUTO_INCREMENT=2;";
 
@@ -211,8 +211,8 @@ class Horror_Amusement_Park
             'consumption' => '单次使用消耗',
             'learning_requirements' => '学习条件',
             'status' => '商品状态（上架/下架）',  // 新增的状态字段注释
-            'effect_type' => '效果类型（削弱/增强）',  // 新增的效果类型字段注释
-            'effect_date' => '效果日期',  // 新增的效果日期字段注释
+            'adjust_type' => '效果类型（削弱/增强）',  // 新增的效果类型字段注释
+            'adjust_date' => '效果日期',  // 新增的效果日期字段注释
         ];
 
         // 添加字段注释
