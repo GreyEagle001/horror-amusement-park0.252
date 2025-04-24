@@ -73,9 +73,6 @@ class Horror_Amusement_Park
         // 添加性能监控
         add_action('shutdown', [$this, 'log_performance']);
 
-        // 添加商品注册页面
-        add_action('admin_menu', [$this, 'add_admin_menu']);
-        add_action('admin_init', [$this, 'handle_item_registration']);
     }
 
     private function upgrade_database()
@@ -95,7 +92,8 @@ class Horror_Amusement_Park
             'personal_center' => HAP_Personal_Center::init(),
             'admin_center'    => HAP_Admin_Center::init(),
             'shock_box'       => HAP_Shock_Box::init(),
-            'warehouse'       => HAP_Warehouse::init()
+            'warehouse'       => HAP_Warehouse::init(),
+            'item_registration'=>HAP_Item_Registration::init()
         ];
 
         // 注册自定义用户角色
@@ -416,165 +414,7 @@ class Horror_Amusement_Park
     }
 
 
-    public function add_admin_menu()
-    {
-        add_menu_page(
-            __('商品注册', 'horror-amusement-park'),
-            __('商品注册', 'horror-amusement-park'),
-            'manage_options',
-            'hap_item_registration',
-            [$this, 'render_item_registration_page'],
-            'dashicons-cart'
-        );
-    }
-
-    public function render_item_registration_page()
-    {
-?>
-        <div class="wrap">
-            <h1><?php _e('注册商品', 'horror-amusement-park'); ?></h1>
-            <form method="post" action="">
-                <?php wp_nonce_field('hap_item_registration', 'hap_item_registration_nonce'); ?>
-                <table class="form-table">
-                    <tr>
-                        <th><label for="item_type"><?php _e('商品类型', 'horror-amusement-park'); ?></label></th>
-                        <td>
-                            <select name="item_type" id="item_type" required>
-                                <option value="consumable"><?php _e('消耗道具', 'horror-amusement-park'); ?></option>
-                                <option value="permanent"><?php _e('永久道具', 'horror-amusement-park'); ?></option>
-                                <option value="arrow"><?php _e('箭矢', 'horror-amusement-park'); ?></option>
-                                <option value="bullet"><?php _e('子弹', 'horror-amusement-park'); ?></option>
-                                <option value="equipment"><?php _e('装备', 'horror-amusement-park'); ?></option>
-                                <option value="skill"><?php _e('技能', 'horror-amusement-park'); ?></option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="name"><?php _e('名称', 'horror-amusement-park'); ?></label></th>
-                        <td><input type="text" name="name" id="name" required></td>
-                    </tr>
-                    <tr>
-                        <th><label for="attributes"><?php _e('属性', 'horror-amusement-park'); ?></label></th>
-                        <td><input type="text" name="attributes" id="attributes" required></td>
-                    </tr>
-                    <tr>
-                        <th><label for="quality"><?php _e('品质', 'horror-amusement-park'); ?></label></th>
-                        <td>
-                            <select name="quality" id="quality" required>
-                                <option value="common"><?php _e('普通', 'horror-amusement-park'); ?></option>
-                                <option value="uncommon"><?php _e('不寻常', 'horror-amusement-park'); ?></option>
-                                <option value="rare"><?php _e('稀有', 'horror-amusement-park'); ?></option>
-                                <option value="epic"><?php _e('史诗', 'horror-amusement-park'); ?></option>
-                                <option value="legendary"><?php _e('传奇', 'horror-amusement-park'); ?></option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="restrictions"><?php _e('限制', 'horror-amusement-park'); ?></label></th>
-                        <td><input type="number" name="restrictions" id="restrictions" required></td>
-                    </tr>
-                    <tr>
-                        <th><label for="effects"><?php _e('特效', 'horror-amusement-park'); ?></label></th>
-                        <td><input type="text" name="effects" id="effects" required></td>
-                    </tr>
-                    <tr>
-                        <th><label for="value"><?php _e('数值', 'horror-amusement-park'); ?></label></th>
-                        <td><input type="number" name="value" id="value" step="0.01" required></td>
-                    </tr>
-                    <tr>
-                        <th><label for="duration"><?php _e('持续时间', 'horror-amusement-park'); ?></label></th>
-                        <td><input type="number" name="duration" id="duration" required></td>
-                    </tr>
-                    <tr>
-                        <th><label for="price"><?php _e('价格', 'horror-amusement-park'); ?></label></th>
-                        <td><input type="number" name="price" id="price" required></td>
-                    </tr>
-                    <tr>
-                        <th><label for="currency"><?php _e('货币', 'horror-amusement-park'); ?></label></th>
-                        <td>
-                            <select name="currency" id="currency" required>
-                                <option value="game_coin"><?php _e('游戏币', 'horror-amusement-park'); ?></option>
-                                <option value="skill_points"><?php _e('技巧值', 'horror-amusement-park'); ?></option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="author"><?php _e('作者', 'horror-amusement-park'); ?></label></th>
-                        <td><input type="text" name="author" id="author" required></td>
-                    </tr>
-                </table>
-                <p class="submit">
-                    <input type="submit" class="button button-primary" value="<?php _e('注册商品', 'horror-amusement-park'); ?>">
-                </p>
-            </form>
-        </div>
-<?php
-    }
-
-
-
-
-
-    public function handle_item_registration()
-    {
-        if (
-            isset($_POST['hap_item_registration_nonce']) &&
-            wp_verify_nonce($_POST['hap_item_registration_nonce'], 'hap_item_registration')
-        ) {
-
-            if (!current_user_can('manage_options')) {
-                add_action('admin_notices', function () {
-                    echo '<div class="notice notice-error is-dismissible"><p>' . __('您没有权限注册商品！', 'horror-amusement-park') . '</p></div>';
-                });
-                return;
-            }
-
-            global $wpdb;
-
-            // 收集并清理数据
-            $item_type = sanitize_text_field($_POST['item_type']);
-            $name = sanitize_text_field($_POST['name']);
-            $attributes = sanitize_text_field($_POST['attributes']);
-            $quality = sanitize_text_field($_POST['quality']);
-            $restrictions = intval($_POST['restrictions']);
-            $effects = sanitize_text_field($_POST['effects']);
-            $value = floatval($_POST['value']);
-            $duration = intval($_POST['duration']);
-            $price = floatval($_POST['price']);
-            $currency = sanitize_text_field($_POST['currency']);
-            $author = sanitize_text_field($_POST['author']); // 获取自定义作者字符串
-
-            // 插入数据
-            $result = $wpdb->insert("{$wpdb->prefix}hap_items", [
-                'item_type' => $item_type,
-                'name' => $name,
-                'attributes' => $attributes,
-                'quality' => $quality,
-                'restrictions' => $restrictions,
-                'effects' => $effects,
-                'value' => $value,
-                'duration' => $duration,
-                'price' => $price,
-                'currency' => $currency,
-                'author' => $author, // 插入自定义作者字符串
-                'created_at' => current_time('mysql')
-            ]);
-
-            // 检查插入结果
-            if ($result === false) {
-                error_log('插入商品失败: ' . $wpdb->last_error);
-                add_action('admin_notices', function () {
-                    echo '<div class="notice notice-error is-dismissible"><p>' . __('商品注册失败！', 'horror-amusement-park') . '</p></div>';
-                });
-            } else {
-                // 成功消息
-                add_action('admin_notices', function () {
-                    echo '<div class="notice notice-success is-dismissible"><p>' . __('商品注册成功！', 'horror-amusement-park') . '</p></div>';
-                });
-            }
-        }
-    }
-
+    
 
 
 

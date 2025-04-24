@@ -415,7 +415,7 @@ jQuery(document).ready(function ($) {
       formData.append("nonce", hap_ajax.nonce);
       formData.append(
         "fields",
-        "item_id,price,currency,effects,name,item_type,quality,restrictions,consumption,level,sales_count,created_at,attributes,learning_requirements,author"
+        "item_id,price,currency,comment,effects,name,item_type,quality,restrictions,consumption,level,sales_count,created_at,attributes,learning_requirements,author"
       ); // 需要的字段
 
       baseItems.forEach((item, index) => {
@@ -542,6 +542,11 @@ jQuery(document).ready(function ($) {
                     ${
                       item.effects
                         ? `<div class="effects-badge">特效：${item.effects}</div>`
+                        : ""
+                    }
+                    ${
+                      item.effects
+                        ? `<div class="effects-badge">备注：${item.comment}</div>`
                         : ""
                     }
                     <div class="price-badge">价格：${
