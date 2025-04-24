@@ -553,3 +553,94 @@
   margin-top: 0;
   color: #fff; /* 标题保持白色 */
 }
+
+/* 基础容器样式 */
+.hap-custom-item-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  font-family: Arial, sans-serif;
+}
+
+/* 表单网格布局 */
+.hap-custom-item-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  align-items: center; /* 垂直居中 */
+}
+
+/* 标签样式（根据图片可能需要添加标签元素） */
+.hap-custom-item-label {
+  text-align: right;
+  padding-right: 10px;
+  font-weight: bold;
+  color: #555;
+}
+
+/* 输入元素统一样式 */
+.hap-custom-item-filters input,
+.hap-custom-item-filters select,
+.hap-custom-item-filters textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box; /* 确保宽度包含padding */
+}
+
+/* 文本区域特殊处理 */
+.hap-custom-item-filters textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* 价格区域布局 */
+.hap-price-section {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.hap-price-section input {
+  flex: 2;
+}
+
+.hap-price-section select {
+  flex: 1;
+}
+
+/* 全宽按钮 */
+.hapcustom-item-save-button {
+  grid-column: 1 / -1;
+  padding: 12px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.3s;
+  margin-top: 10px;
+}
+
+.hapcustom-item-save-button:hover {
+  background: #45a049;
+}
+
+/* 响应式调整 */
+@media (max-width: 600px) {
+  .hap-custom-item-filters {
+      grid-template-columns: 1fr;
+  }
+  
+  .hap-custom-item-label {
+      text-align: left;
+      padding-right: 0;
+      padding-bottom: 5px;
+  }
+}

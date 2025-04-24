@@ -56,30 +56,61 @@ class HAP_Warehouse
             </div>
 
             <div class="hap-tab-content" id="hap-custom-tab">
-                <h3>自定义道具</h3>
-                <div class="hap-custom-item-container">
-            <h4>添加自定义道具</h4>
-            <div class="hap-custom-item-filters">
-                <input type="text" id="hap-custom-item-name" placeholder="请输入道具名称" required>
-                <select id="hap-custom-item-type" required>
-                    <option value="">选择道具类型</option>
-                    <option value="consumable">消耗道具</option>
-                    <option value="permanent">永久道具</option>
-                    <option value="arrow">箭矢</option>
-                    <option value="bullet">子弹</option>
-                    <option value="equipment">装备</option>
-                    <option value="skill">法术</option>
-                </select>
-                <select id="hap-custom-item-quality" required>
-                    <option value="">选择道具品质</option>
-                    <option value="common">普通</option>
-                    <option value="uncommon">精良</option>
-                    <option value="rare">稀有</option>
-                    <option value="epic">史诗</option>
-                    <option value="legendary">传说</option>
-                </select>
-                <button id="hap-custom-item-save-btn" class="hapcustom-item-save-button">保存道具</button>
-            </div>
+    <h3>自定义道具</h3>
+    <div class="hap-custom-item-container">
+    <h4>添加自定义道具</h4>
+    <div class="hap-custom-item-filters">
+        <!-- 基础信息 -->
+        <input type="text" id="hap-custom-item-name" placeholder="名称*" required>
+        <input type="text" id="hap-custom-item-attributes" placeholder="属性">
+        
+        <!-- 类型选择 -->
+        <select id="hap-custom-item-type" required>
+            <option value="">类型*</option>
+            <option value="consumable">消耗道具</option>
+            <option value="permanent">永久道具</option>
+            <option value="arrow">箭矢</option>
+            <option value="bullet">子弹</option>
+            <option value="equipment">装备</option>
+            <option value="skill">法术</option>
+        </select>
+        
+        <!-- 品质选择 -->
+        <select id="hap-custom-item-quality">
+            <option value="">品质</option>
+            <option value="common">普通</option>
+            <option value="uncommon">精良</option>
+            <option value="rare">稀有</option>
+            <option value="epic">史诗</option>
+            <option value="legendary">传说</option>
+        </select>
+        
+        <!-- 数值类字段 -->
+        <input type="text" id="hap-custom-item-level" placeholder="可使用等级">
+        <input type="number" id="hap-custom-item-restrictions" placeholder="单格携带数量" min="1">
+        <textarea id="hap-custom-item-effects" placeholder="特效" required></textarea>
+        <textarea id="hap-custom-item-comment" placeholder="备注"></textarea>
+        <input type="text" id="hap-custom-item-duration" placeholder="持续时间">
+        
+        <!-- 价格系统 -->
+        <div class="hap-price-section">
+            <input type="number" id="hap-custom-item-price" placeholder="价格*" min="0" required>
+            <select id="hap-custom-item-currency" required>
+                <option value="game_coin" selected>游戏币*</option>
+                <option value="skill_points">技巧值*</option>
+            </select>
+        </div>
+        
+        <!-- 消耗/学习要求 -->
+        <input type="text" id="hap-custom-item-consumption" placeholder="单次使用消耗">
+        <input type="text" id="hap-custom-item-learning-req" placeholder="学习条件">
+        
+        <!-- 作者信息 -->
+        <input type="text" id="hap-custom-item-author" placeholder="作者*" required>
+        
+        <button id="hap-custom-item-save-btn" class="hapcustom-item-save-button">保存道具</button>
+    </div>
+</div>
     
             <div class="hap-custom-item-grid" id="hap-custom-item-container">
                 <!-- 自定义道具列表将在此显示 -->
@@ -262,32 +293,99 @@ class HAP_Warehouse
     
     // 处理 AJAX 表单提交
     public function ajax_save_custom_items() {
-        check_ajax_referer('hap-nonce', 'nonce');
-        error_log('[HAP DEBUG] AJAX save initiated - ' . current_time('mysql'));
-    
-        $request = array_map('wp_unslash', $_POST);
-        $args = [
-            'name'        => !empty($request['name']) ? sanitize_text_field($request['name']) : '',
-            'item_type'   => ($request['item_type'] ?? '') === '*' ? '' : sanitize_text_field($request['item_type'] ?? ''),
-            'quality'     => ($request['quality'] ?? '') === '*' ? '' : sanitize_text_field($request['quality'] ?? ''),
-        ];
-    
+        // 1. 请求开始标记
+        error_log('[HAP][开始] AJAX保存请求开始 '.current_time('mysql'));
+        
         try {
-            $results = $this->save_custom_items($args);
+            // 2. 安全验证
+            error_log('[HAP][阶段1] 开始Nonce验证');
+            check_ajax_referer('hap-nonce', 'nonce');
+            error_log('[HAP][阶段1] Nonce验证通过');
     
-            // 结构标准化输出
+            // 3. 请求数据处理
+            error_log('[HAP][阶段2] 原始POST数据: '.print_r($_POST, true));
+            $request = array_map('wp_unslash', $_POST);
+            error_log('[HAP][阶段2] 处理后的请求数据: '.print_r($request, true));
+    
+            // 4. 字段验证
+            error_log('[HAP][阶段3] 开始字段验证');
+            if (empty($request['name'])) {
+                error_log('[HAP][错误] 道具名称为空');
+                wp_send_json_error([
+                    'message' => __('道具名称不能为空', 'hap'),
+                    'code'    => 'HAP_ERR_NAME_EMPTY'
+                ], 400);
+            }
+    
+            if (empty($request['item_type']) || !in_array($request['item_type'], ['consumable', 'permanent', 'arrow', 'bullet', 'equipment', 'skill'])) {
+                error_log('[HAP][错误] 无效道具类型: '.($request['item_type'] ?? '空值'));
+                wp_send_json_error([
+                    'message' => __('请选择有效的道具类型', 'hap'),
+                    'code'    => 'HAP_ERR_INVALID_TYPE'
+                ], 400);
+            }
+            error_log('[HAP][阶段3] 基础验证通过');
+    
+            // 5. 参数组装
+            error_log('[HAP][阶段4] 开始构建参数数组');
+            $args = [
+                // 基础信息（空字符串转为空值）
+                'name'        => !empty($request['name']) ? sanitize_text_field($request['name']) : null,
+                'attributes'  => !empty($request['attributes']) ? sanitize_textarea_field($request['attributes']) : null,
+                
+                // 类型选择（保留默认值）
+                'item_type'   => sanitize_text_field($request['item_type'] ?? 'consumable'),
+                'quality'     => sanitize_text_field($request['quality'] ?? 'common'),
+                
+                // 数值类字段（空值不传）
+                'level'         => isset($request['level']) ? intval($request['level']) : null,
+                'restrictions'  => isset($request['restrictions']) ? intval($request['restrictions']) : null,
+                'effects'       => !empty($request['effects']) ? sanitize_textarea_field($request['effects']) : null,
+                'comment'       => !empty($request['comment']) ? sanitize_text_field($request['comment']) : null,
+                'duration'      => isset($request['duration']) ? intval($request['duration']) : null,
+                
+                // 价格系统
+                'price'     => isset($request['price']) ? floatval($request['price']) : null,
+                'currency'  => sanitize_text_field($request['currency'] ?? 'game_coin'),
+                
+                // 消耗/学习要求
+                'consumption'   => !empty($request['consumption']) ? sanitize_text_field($request['consumption']) : null,
+                'learning_requirements'  => !empty($request['learning_requirements']) ? sanitize_textarea_field($request['learning_requirements']) : null,
+                
+                // 作者信息
+                'author' => !empty($request['author']) ? sanitize_text_field($request['author']) : '匿名'
+            ];
+            error_log('[HAP][阶段4] 最终参数: '.print_r($args, true));
+    
+            // 6. 数据库操作
+            error_log('[HAP][阶段5] 开始数据库保存');
+            $results = $this->save_custom_items($args);
+            error_log('[HAP][阶段5] 保存结果: '.print_r($results, true));
+    
+            // 7. 成功响应
+            error_log('[HAP][成功] 准备返回成功响应');
             wp_send_json([
                 'success' => true,
-                'items' => array_values($results['items'] ?? []),
-                'pagination' => $results['pagination'] ?? [
-                    'total' => 0
+                'data'    => [
+                    'item_id'   => $results['item_id'] ?? 0,
+                    'view_url'  => add_query_arg('item_id', $results['item_id'] ?? 0, home_url('/item-view'))
                 ],
+                'message' => __('道具保存成功', 'hap')
             ]);
+    
         } catch (Exception $e) {
+            // 8. 异常处理
+            error_log('[HAP][异常] 文件:'.$e->getFile().' 行号:'.$e->getLine());
+            error_log('[HAP][异常] 错误信息:'.$e->getMessage());
+            error_log('[HAP][异常] 堆栈追踪:'.$e->getTraceAsString());
+            
             wp_send_json_error([
-                'message' => __('保存失败，请稍后重试', 'hap'),
-                'code'    => uniqid('HAP_ERR_')
+                'message' => $e->getMessage() ?: __('保存失败，请稍后重试', 'hap'),
+                'code'    => 'HAP_ERR_'.uniqid()
             ], 500);
+        } finally {
+            // 9. 最终标记
+            error_log('[HAP][结束] 请求处理完成 '.current_time('mysql'));
         }
     }
 
@@ -303,15 +401,100 @@ public function ajax_get_custom_items() {
 
     private function save_custom_items($args) {
         global $wpdb;
-        $wpdb->insert("{$wpdb->prefix}hap_custom_items", [
-            'user_id' => get_current_user_id(),
-            'name' => $args['name'],
-            'item_type' => $args['item_type'],
-            'quality' => $args['quality'],
-            'created_at' => current_time('mysql')
-        ]);
-        return ['items' => [$wpdb->insert_id]];
+        
+        error_log('[HAP][数据库] 开始保存道具数据 '.current_time('mysql'));
+        error_log('[HAP][数据库] 接收参数: '.print_r($args, true));
+    
+        try {
+            // 定义基础必填字段
+            $item_data = [
+                'user_id'    => get_current_user_id(),
+                'name'       => isset($args['name']) ? sanitize_text_field($args['name']) : '未命名道具',
+                'created_at' => current_time('mysql')
+            ];
+    
+            // 可选字段映射表（字段名 => 数据类型）
+            $optional_fields = [
+                'attributes'  => 'string',
+                'item_type'   => 'string',
+                'quality'     => 'string',
+                'level'       => 'int',
+                'restrictions'=> 'int',
+                'effects'     => 'string',
+                'comment'     => 'string',
+                'duration'    => 'int',
+                'price'       => 'float',
+                'currency'    => 'string',
+                'consumption' => 'string',
+                'learning_requirements' => 'string',
+                'author'      => 'string'
+            ];
+    
+            // 仅处理有输入的字段
+            foreach ($optional_fields as $field => $type) {
+                if (isset($args[$field]) && $args[$field] !== '') {
+                    $item_data[$field] = $this->sanitize_field($args[$field], $type);
+                }
+            }
+    
+            // 动态生成占位符
+            $placeholders = [];
+            foreach (array_keys($item_data) as $key) {
+                $placeholders[] = $this->get_placeholder_type($key, $optional_fields);
+            }
+    
+            // 执行插入（仅包含有值的字段）
+            $result = $wpdb->insert(
+                "{$wpdb->prefix}hap_custom_items",
+                $item_data,
+                $placeholders
+            );
+    
+            if (false === $result) {
+                error_log('[HAP][数据库错误] 插入失败: '.$wpdb->last_error);
+                throw new Exception('数据库写入失败');
+            }
+    
+            return [
+                'item_id'  => $wpdb->insert_id,
+                'view_url' => add_query_arg('item_id', $wpdb->insert_id, home_url('/item-view'))
+            ];
+    
+        } catch (Exception $e) {
+            error_log('[HAP][数据库异常] '.$e->getMessage());
+            throw $e;
+        }
     }
+    
+    /**
+     * 字段类型处理器
+     */
+    private function sanitize_field($value, $type) {
+        switch ($type) {
+            case 'int':
+                return (int)$value;
+            case 'float':
+                return (float)$value;
+            case 'string':
+                return sanitize_text_field($value);
+            default:
+                return $value;
+        }
+    }
+    
+    /**
+     * 获取SQL占位符类型
+     */
+    private function get_placeholder_type($field, $field_types) {
+        if (!isset($field_types[$field])) return '%s';
+        
+        switch ($field_types[$field]) {
+            case 'int':   return '%d';
+            case 'float': return '%f';
+            default:      return '%s';
+        }
+    }
+    
     private function get_type_name($type) {
         $types = [
             'consumable' => '消耗道具',

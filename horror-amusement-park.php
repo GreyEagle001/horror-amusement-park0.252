@@ -170,18 +170,19 @@ class Horror_Amusement_Park
             item_id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             item_type enum('consumable','permanent','arrow','bullet','equipment','skill') NOT NULL,
             name varchar(255) NOT NULL,
-            attributes text DEFAULT NULL,
+            attributes varchar(10) DEFAULT NULL,
             quality enum('common','uncommon','rare','epic','legendary') DEFAULT 'common',
             restrictions int(11) DEFAULT NULL,
             effects text DEFAULT NULL,
-            duration int(11) DEFAULT NULL,
-            price decimal(10,2) NOT NULL DEFAULT '0.00',
+            duration text DEFAULT NULL,
+            price decimal(10) NOT NULL DEFAULT '0',
             currency enum('game_coin','skill_points') NOT NULL DEFAULT 'game_coin',
+            comment text DEFAULT NULL,
             author varchar(20) NOT NULL,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             sales_count int(11) NOT NULL DEFAULT '0',
             level int(11) DEFAULT NULL,
-            consumption decimal(10,2) DEFAULT NULL,
+            consumption text DEFAULT NULL,
             learning_requirements text DEFAULT NULL,
             status enum('publish', 'unpublish') NOT NULL DEFAULT 'publish',  -- 新增的状态属性
             adjust_type enum('buff', 'debuff') DEFAULT NULL,  -- 新增的效果类型属性
@@ -204,6 +205,7 @@ class Horror_Amusement_Park
             'duration' => '持续时间',
             'price' => '价格',
             'currency' => '货币',
+            'comment' => '备注',
             'author' => '作者',
             'created_at' => '上架时间',
             'sales_count' => '售出数量',
@@ -247,7 +249,7 @@ class Horror_Amusement_Park
             user_id bigint(20) UNSIGNED NOT NULL,
             item_id int(11) NOT NULL,
             quantity int(11) NOT NULL,
-            purchase_price decimal(10,2) NOT NULL DEFAULT '0.00',
+            purchase_price decimal(10) NOT NULL DEFAULT '0',
             currency enum('game_coin','skill_points') NOT NULL DEFAULT 'game_coin',
             PRIMARY KEY (id)
         ) $charset_collate ENGINE=InnoDB AUTO_INCREMENT=1;";
@@ -336,18 +338,19 @@ class Horror_Amusement_Park
             user_id bigint(20) UNSIGNED NOT NULL,
             item_type enum('consumable','permanent','arrow','bullet','equipment','skill') NOT NULL,
             name varchar(255) NOT NULL,
-            attributes text DEFAULT NULL,
+            attributes varchar(10) DEFAULT NULL,
             quality enum('common','uncommon','rare','epic','legendary') DEFAULT 'common',
             restrictions int(11) DEFAULT NULL,
             effects text DEFAULT NULL,
-            duration int(11) DEFAULT NULL,
-            price decimal(10,2) NOT NULL DEFAULT '0.00',
+            duration text DEFAULT NULL,
+            price decimal(10) NOT NULL DEFAULT '0',
             currency enum('game_coin','skill_points') NOT NULL DEFAULT 'game_coin',
+            comment text DEFAULT NULL,
             author varchar(20) NOT NULL,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             sales_count int(11) NOT NULL DEFAULT '0',
             level int(11) DEFAULT NULL,
-            consumption decimal(10,2) DEFAULT NULL,
+            consumption text DEFAULT NULL,
             learning_requirements text DEFAULT NULL,
             status enum('publish', 'unpublish') NOT NULL DEFAULT 'publish',
             adjust_type enum('buff', 'debuff') DEFAULT NULL,
@@ -371,6 +374,7 @@ class Horror_Amusement_Park
             'duration' => '持续时间',
             'price' => '价格',
             'currency' => '货币',
+            'comment' => '备注',
             'author' => '作者',
             'created_at' => '创建时间',
             'sales_count' => '售出数量',
@@ -483,7 +487,7 @@ class Horror_Amusement_Park
                     </tr>
                     <tr>
                         <th><label for="price"><?php _e('价格', 'horror-amusement-park'); ?></label></th>
-                        <td><input type="number" name="price" id="price" step="0.01" required></td>
+                        <td><input type="number" name="price" id="price" required></td>
                     </tr>
                     <tr>
                         <th><label for="currency"><?php _e('货币', 'horror-amusement-park'); ?></label></th>

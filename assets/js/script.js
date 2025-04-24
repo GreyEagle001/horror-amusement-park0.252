@@ -880,55 +880,95 @@ function loadInventory(page) {
 });
 
 function saveCustomItem() {
-  const searchParams = {
-      action: "hap_save_custom_items", // 确保这个动作与后端处理匹配
-      nonce: hap_ajax.nonce, // 验证nonce
-      name: $("#hap-custom-item-name").val().trim(), // 获取道具名称
-      item_type: $("#hap-custom-item-type").val(), // 获取道具类型
-      quality: $("#hap-custom-item-quality").val(), // 获取道具品质
+  // 获取表单DOM引用
+  const $form = $('.hap-custom-item-filters');
+  
+  // 基础验证
+  if (!$('#hap-custom-item-name').val().trim()) {
+      return alert('道具名称不能为空');
+  }
+  if (!$('#hap-custom-item-type').val()) {
+      return alert('请选择道具类型');
+  }
+  if (!$('#hap-custom-item-price').val()) {
+      return alert('请填写道具价格');
+  }
+
+  // 构建请求参数
+  const requestData = {
+    action: "hap_save_custom_items",
+    nonce: hap_ajax.nonce,
+    // 基础信息（空字符串转为undefined）
+    name: $('#hap-custom-item-name').val().trim() || undefined,
+    attributes: $('#hap-custom-item-attributes').val().trim() || undefined,
+    
+    // 类型选择（保留默认值逻辑）
+    item_type: $('#hap-custom-item-type').val(),
+    quality: $('#hap-custom-item-quality').val() || 'common',
+    
+    // 数值类字段（空值不传）
+    level: $('#hap-custom-item-level').val() ? parseInt($('#hap-custom-item-level').val()) : undefined,
+    restrictions: $('#hap-custom-item-restrictions').val() ? parseInt($('#hap-custom-item-restrictions').val()) : undefined,
+    effects: $('#hap-custom-item-effects').val().trim() || undefined,
+    comment: $('#hap-custom-item-comment').val().trim() || undefined,
+    duration: $('#hap-custom-item-duration').val() ? parseInt($('#hap-custom-item-duration').val()) : undefined,
+    
+    // 价格系统
+    price: $('#hap-custom-item-price').val() ? parseFloat($('#hap-custom-item-price').val()) : undefined,
+    currency: $('#hap-custom-item-currency').val(),
+    
+    // 消耗/学习要求
+    consumption: $('#hap-custom-item-consumption').val().trim() || undefined,
+    learning_requirements: $('#hap-custom-item-learning-req').val().trim() || undefined,
+    
+    // 作者信息（保留默认值）
+    author: $('#hap-custom-item-author').val().trim() || '匿名'
   };
 
-  // 清理空参数
-  Object.keys(searchParams).forEach((key) => {
-      if (!searchParams[key]) {
-          delete searchParams[key]; // 删除空值参数
-      }
+  // 2. 清理空参数（与搜索逻辑保持一致）
+  Object.keys(requestData).forEach(key => {
+    requestData[key] === undefined && delete requestData[key];
   });
 
-  // 发送保存请求
-  $.post(hap_ajax.ajax_url, searchParams)
-      .done((baseResponse) => {
-          if (baseResponse.success) {
-              alert('道具保存成功！');
-              
-              // 清空输入框
-              $("#hap-custom-item-name").val('');
-              $("#hap-custom-item-type").val('consumable'); // 重置类型选择
-              $("#hap-custom-item-quality").val('common'); // 重置品质选择
-              
-              // 可选：在这里调用一个方法来更新道具列表
-              loadCustomItems(); // 重新加载道具列表
-          } else {
-              alert('保存失败：' + baseResponse.data.message);
-          }
-      })
-      .fail((jqXHR, textStatus, errorThrown) => {
-          console.error("[HAP] 数据异常:", textStatus, errorThrown);
-          
-          // 错误降级处理
-          const $container = $("#hap-custom-item-container");
-          $container.html(
-              `
-              <div class="hap-error">
-                  <i class="icon-warning"></i>
-                  道具保存失败: ${errorThrown}
-                  <button class="hap-retry-btn">重试</button>
-              </div>
-              `
-          ).find(".hap-retry-btn").click(() => {
-              saveCustomItem(); // 重新尝试保存
-          });
-      });
+  // 3. 显示加载状态
+  const $saveBtn = $('#hap-custom-item-save-btn');
+  $saveBtn.prop('disabled', true).html('<i class="icon-loading"></i> 保存中...');
+  console.log('自定义1');
+
+  // 4. 使用Promise链式调用
+  Promise.resolve($.ajax({
+    url: hap_ajax.ajax_url,
+    type: 'POST',
+    data: requestData,
+    dataType: 'json'
+  }))
+    .then(response => {
+      if (!response?.success) {
+        throw new Error(response?.data?.message || '服务器错误');
+      }
+      
+      // 成功处理
+      alert('道具保存成功！');
+      const formEl = document.getElementById('hap-custom-item-form');
+if (formEl) formEl.reset();
+      $('#hap-custom-item-type').val('consumable');
+      $('#hap-custom-item-quality').val('common');
+      $('#hap-custom-item-currency').val('game_coin');
+      
+      // 可在此处调用刷新逻辑
+      // loadCustomItems();
+    })
+    .catch(error => {
+      console.error('保存失败:', error);
+      alert(error.message.includes('Network') ? 
+        '网络错误，请检查连接后重试' : 
+        `保存失败：${error.message}`);
+    })
+    .finally(() => {
+      // 确保始终执行的逻辑（替代.always）
+      $saveBtn.prop('disabled', false).text('保存道具');
+      console.log('自定义3');
+    });
 }
 
 function loadCustomItems() {
@@ -939,46 +979,6 @@ function loadCustomItems() {
       $('#hap-custom-item-container').html(renderItems(response.data.items));
   });
 }
-
-  function submitCustomItemForm($form) {
-    const $btn = $form.find(".hap-submit");
-    const originalText = $btn.text();
-    $btn.prop("disabled", true).text("创建中...");
-
-    const formData = {
-      action: "hap_create_custom_item",
-      nonce: $form.find('[name="hap_nonce"]').val(),
-      item_type: $form.find('[name="item_type"]').val(),
-      name: $form.find('[name="name"]').val(),
-    };
-
-    // 根据不同类型收集不同字段
-    const itemType = formData.item_type;
-    if (itemType === "equipment") {
-      formData.attributes = $form.find('[name="attributes"]').val();
-    } else if (itemType === "skill") {
-      formData.level = $form.find('[name="level"]').val();
-    } else {
-      formData.effect = $form.find('[name="effect"]').val();
-    }
-
-    hapQueueRequest(() => $.post(hap_ajax.ajax_url, formData))
-      .then((response) => {
-        if (response.success) {
-          showSuccess("自定义道具创建成功！");
-          $form[0].reset();
-          loadInventory();
-        } else {
-          throw new Error(response.data || "创建失败");
-        }
-      })
-      .catch((error) => {
-        showError(error.message);
-      })
-      .finally(() => {
-        $btn.prop("disabled", false).text(originalText);
-      });
-  }
 
   // 其他辅助函数
   function getTypeName(type) {
