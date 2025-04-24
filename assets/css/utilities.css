@@ -1,0 +1,61 @@
+/**
+ * HAP - 实用工具样式表
+ * 原子类工具，用于快速微调样式
+ * 最后更新: 2025-04-24
+ */
+
+/* ===== 间距工具 ===== */
+.hap-m-0 { margin: 0 !important; }
+.hap-m-1 { margin: 0.5rem !important; }
+.hap-m-2 { margin: 1rem !important; }
+.hap-m-3 { margin: 1.5rem !important; }
+
+.hap-mx-auto { margin-left: auto !important; margin-right: auto !important; }
+
+/* 各方向独立控制 */
+.hap-pt-1 { padding-top: 0.5rem !important; }
+.hap-pb-1 { padding-bottom: 0.5rem !important; }
+.hap-pl-1 { padding-left: 0.5rem !important; }
+.hap-pr-1 { padding-right: 0.5rem !important; }
+
+/* ===== 文本工具 ===== */
+.hap-text-left { text-align: left !important; }
+.hap-text-center { text-align: center !important; }
+.hap-text-right { text-align: right !important; }
+
+.hap-text-primary { color: var(--hap-primary) !important; }
+.hap-text-error { color: var(--hap-error) !important; }
+
+.hap-font-bold { font-weight: 700 !important; }
+.hap-font-light { font-weight: 300 !important; }
+
+/* ===== 显示工具 ===== */
+.hap-block { display: block !important; }
+.hap-inline-block { display: inline-block !important; }
+.hap-flex { display: flex !important; }
+.hap-hidden { display: none !important; }
+
+.hap-justify-between { justify-content: space-between !important; }
+.hap-items-center { align-items: center !important; }
+
+/* ===== 边框工具 ===== */
+.hap-border { border: 1px solid var(--hap-border) !important; }
+.hap-border-t { border-top: 1px solid var(--hap-border) !important; }
+.hap-border-b { border-bottom: 1px solid var(--hap-border) !important; }
+
+.hap-rounded { border-radius: 0.25rem !important; }
+.hap-rounded-full { border-radius: 9999px !important; }
+
+/* ===== 背景工具 ===== */
+.hap-bg-primary { background-color: var(--hap-primary) !important; }
+.hap-bg-dark { background-color: var(--hap-secondary) !important; }
+
+/* ===== 交互工具 ===== */
+.hap-cursor-pointer { cursor: pointer !important; }
+.hap-pointer-events-none { pointer-events: none !important; }
+
+/* ===== 响应式工具 ===== */
+@media (max-width: 768px) {
+  .hap-md-hidden { display: none !important; }
+  .hap-md-block { display: block !important; }
+}

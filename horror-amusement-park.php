@@ -463,13 +463,29 @@ class Horror_Amusement_Park
 
     public function enqueue_assets()
     {
-        // 主样式文件
-        wp_enqueue_style(
-            'hap-style',
-            HAP_PLUGIN_URL . 'assets/css/style.css',
-            [],
-            filemtime(HAP_PLUGIN_DIR . 'assets/css/style.css')
-        );
+        // 基础样式 (必须加载)
+    wp_enqueue_style(
+        'hap-base',
+        HAP_PLUGIN_URL . 'assets/css/base.css',
+        [],
+        filemtime(HAP_PLUGIN_DIR . 'assets/css/base.css')
+    );
+
+     // 组件样式 (依赖基础样式)
+     wp_enqueue_style(
+        'hap-components',
+        HAP_PLUGIN_URL . 'assets/css/components.css',
+        ['hap-base'],
+        filemtime(HAP_PLUGIN_DIR . 'assets/css/components.css')
+    );
+
+    // 布局样式 (依赖组件样式)
+    wp_enqueue_style(
+        'hap-layout',
+        HAP_PLUGIN_URL . 'assets/css/layout.css',
+        ['hap-components'],
+        filemtime(HAP_PLUGIN_DIR . 'assets/css/layout.css')
+    );
 
         // 主脚本文件
         wp_enqueue_script(
@@ -493,18 +509,33 @@ class Horror_Amusement_Park
             ]
         ]);
 
-        // 条件加载
-        if (is_page('shock-box')) {
-            wp_enqueue_script(
-                'hap-shock-box',
-                HAP_PLUGIN_URL . 'assets/js/scripts.js',
-                ['hap-script'],
-                filemtime(HAP_PLUGIN_DIR . 'assets/js/scripts.js'),
-                true
-            );
-        }
+        // 惊吓盒子页面专用资源
+    if (is_page('shock-box')) {
+        wp_enqueue_style(
+            'hap-shock-box',
+            HAP_PLUGIN_URL . 'assets/css/pages/shock-box.css',
+            ['hap-layout'],
+            filemtime(HAP_PLUGIN_DIR . 'assets/css/pages/shock-box.css')
+        );
 
+        wp_enqueue_script(
+            'hap-shock-box',
+            HAP_PLUGIN_URL . 'assets/js/scripts.js',
+            ['hap-script'],
+            filemtime(HAP_PLUGIN_DIR . 'assets/js/scripts.js'),
+            true
+        );
+    }
+
+        // 仓库页面专用资源
         if (is_page('warehouse')) {
+            wp_enqueue_style(
+                'hap-warehouse',
+                HAP_PLUGIN_URL . 'assets/css/pages/warehouse.css',
+                ['hap-layout'],
+                filemtime(HAP_PLUGIN_DIR . 'assets/css/pages/warehouse.css')
+            );
+
             wp_enqueue_script(
                 'hap-warehouse',
                 HAP_PLUGIN_URL . 'assets/js/scripts.js',
@@ -513,6 +544,24 @@ class Horror_Amusement_Park
                 true
             );
         }
+
+        // 管理员后台专用资源
+    if (is_admin()) {
+        wp_enqueue_style(
+            'hap-admin',
+            HAP_PLUGIN_URL . 'assets/css/admin.css',
+            ['hap-layout'],
+            filemtime(HAP_PLUGIN_DIR . 'assets/css/admin.css')
+        );
+
+        wp_enqueue_script(
+            'hap-warehouse',
+            HAP_PLUGIN_URL . 'assets/js/scripts.js',
+            ['hap-script'],
+            filemtime(HAP_PLUGIN_DIR . 'assets/js/scripts.js'),
+            true
+        );
+    }
     }
 
     public function check_requirements()

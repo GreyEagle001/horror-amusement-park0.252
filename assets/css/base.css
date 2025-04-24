@@ -1,0 +1,85 @@
+/**
+ * HAP - 基础样式表
+ * 包含全局重置、变量定义和基础布局
+ * 最后更新: 2025-04-24
+ */
+
+ :root {
+    /* 颜色变量 */
+    --hap-primary: #8b0000;
+    --hap-primary-dark: #6b0000;
+    --hap-secondary: #2a2a2a;
+    --hap-bg: #1a1a1a;
+    --hap-text: #e0e0e0;
+    --hap-text-light: #ffffff;
+    --hap-border: #444;
+    --hap-success: #4CAF50;
+    --hap-warning: #ffcc00;
+    --hap-error: #ff4d4d;
+  }
+  
+  /* 全局重置 */
+  .hap-personal-center,
+  .hap-admin-center {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  
+  /* 基础容器样式 */
+  .hap-personal-center,
+  .hap-admin-center {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: var(--hap-bg);
+    border-radius: 0.5rem;
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.3);
+    color: var(--hap-text);
+    line-height: 1.6;
+  }
+  
+  /* 排版基础 */
+  .hap-personal-center h1,
+  .hap-personal-center h2,
+  .hap-personal-center h3,
+  .hap-admin-center h1,
+  .hap-admin-center h2,
+  .hap-admin-center h3 {
+    color: var(--hap-text-light);
+    margin-top: 0;
+    font-weight: 600;
+  }
+  
+  .hap-personal-center a,
+  .hap-admin-center a {
+    color: var(--hap-primary);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  
+  .hap-personal-center a:hover,
+  .hap-admin-center a:hover {
+    color: var(--hap-error);
+  }
+  
+  /* 响应式设计 */
+  @media (max-width: 768px) {
+    .hap-personal-center,
+    .hap-admin-center {
+      padding: 1rem;
+      margin: 1rem;
+      border-radius: 0.25rem;
+    }
+  }
+  
+  /* 工具类 */
+  .hap-text-center {
+    text-align: center;
+  }
+  
+  .hap-mt-1 { margin-top: 0.5rem; }
+  .hap-mt-2 { margin-top: 1rem; }
+  .hap-mt-3 { margin-top: 1.5rem; }
+  

@@ -1,0 +1,162 @@
+/**
+ * HAP - 组件样式表
+ * 包含所有可复用UI组件样式
+ * 最后更新: 2025-04-24
+ */
+
+/* ========== 卡片组件 ========== */
+.hap-card {
+    background-color: var(--hap-secondary);
+    border-radius: 0.375rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-left: 0.25rem solid var(--hap-primary);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .hap-card:hover {
+    transform: translateY(-0.125rem);
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.2);
+  }
+  
+  .hap-card-header {
+    font-size: 1.25rem;
+    color: var(--hap-error);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--hap-border);
+  }
+  
+  /* ========== 按钮组件 ========== */
+  .hap-btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+  
+  .hap-btn-primary {
+    background-color: var(--hap-primary);
+    color: white;
+  }
+  
+  .hap-btn-primary:hover {
+    background-color: var(--hap-primary-dark);
+    transform: translateY(-0.125rem);
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.2);
+  }
+  
+  .hap-btn-secondary {
+    background-color: var(--hap-secondary);
+    color: var(--hap-text);
+    border: 1px solid var(--hap-border);
+  }
+  
+  .hap-btn-danger {
+    background-color: var(--hap-error);
+    color: white;
+  }
+  
+  /* ========== 表单组件 ========== */
+  .hap-form-group {
+    margin-bottom: 1.25rem;
+  }
+  
+  .hap-form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--hap-text);
+  }
+  
+  .hap-form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--hap-border);
+    background-color: var(--hap-secondary);
+    color: var(--hap-text);
+    transition: border-color 0.2s;
+  }
+  
+  .hap-form-control:focus {
+    outline: none;
+    border-color: var(--hap-primary);
+  }
+  
+  /* ========== 通知组件 ========== */
+  .hap-alert {
+    padding: 1rem;
+    border-radius: 0.25rem;
+    margin-bottom: 1rem;
+  }
+  
+  .hap-alert-success {
+    background-color: rgba(76, 175, 80, 0.2);
+    border-left: 0.25rem solid var(--hap-success);
+    color: var(--hap-text-light);
+  }
+  
+  .hap-alert-warning {
+    background-color: rgba(255, 204, 0, 0.2);
+    border-left: 0.25rem solid var(--hap-warning);
+  }
+  
+  .hap-alert-error {
+    background-color: rgba(255, 77, 77, 0.2);
+    border-left: 0.25rem solid var(--hap-error);
+  }
+  
+  /* ========== 网格系统 ========== */
+  .hap-grid {
+    display: grid;
+    gap: 1.5rem;
+  }
+  
+  .hap-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .hap-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  @media (max-width: 768px) {
+    .hap-grid-2,
+    .hap-grid-3 {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  /* ========== 特殊组件 ========== */
+  .hap-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  
+  .hap-badge-primary {
+    background-color: var(--hap-primary);
+    color: white;
+  }
+  
+  .hap-loading-spinner {
+    display: inline-block;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 0.25rem solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: hap-spin 1s linear infinite;
+  }
+  
+  @keyframes hap-spin {
+    to { transform: rotate(360deg); }
+  }
+  
