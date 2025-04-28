@@ -65,7 +65,8 @@ class Horror_Amusement_Park
         register_deactivation_hook(__FILE__, [$this, 'deactivate']);
 
         // 初始化插件
-        add_action('plugins_loaded', [$this, 'setup'], 5);
+        add_action('plugins_loaded', [$this, 'load_plugin_textdomain']);
+        add_action('init', [$this, 'setup'], 5);
         add_action('init', [$this, 'register_post_types'], 0);
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('admin_init', [$this, 'check_requirements']);
@@ -73,6 +74,14 @@ class Horror_Amusement_Park
         // 添加性能监控
         add_action('shutdown', [$this, 'log_performance']);
 
+    }
+
+    public function load_plugin_textdomain() {
+        load_plugin_textdomain(
+            'horror-amusement-park',
+            false,
+            dirname(plugin_basename(__FILE__)) . '/languages/'
+        );
     }
 
     private function upgrade_database()
@@ -510,39 +519,64 @@ class Horror_Amusement_Park
         ]);
 
         // 惊吓盒子页面专用资源
-    if (is_page('shock-box')) {
+    if (is_page('惊吓盒子')) {
         wp_enqueue_style(
             'hap-shock-box',
             HAP_PLUGIN_URL . 'assets/css/pages/shock-box.css',
             ['hap-layout'],
             filemtime(HAP_PLUGIN_DIR . 'assets/css/pages/shock-box.css')
+            
         );
+        error_log('开启了shock-box.css');
 
         wp_enqueue_script(
             'hap-shock-box',
-            HAP_PLUGIN_URL . 'assets/js/scripts.js',
-            ['hap-script'],
-            filemtime(HAP_PLUGIN_DIR . 'assets/js/scripts.js'),
+            HAP_PLUGIN_URL . 'assets/js/shock-box.js',
+            ['jquery'],  // 只依赖 jQuery，不依赖 script.js
+            filemtime(HAP_PLUGIN_DIR . 'assets/js/shock-box.js'),
             true
         );
     }
 
         // 仓库页面专用资源
-        if (is_page('warehouse')) {
-            wp_enqueue_style(
-                'hap-warehouse',
-                HAP_PLUGIN_URL . 'assets/css/pages/warehouse.css',
-                ['hap-layout'],
-                filemtime(HAP_PLUGIN_DIR . 'assets/css/pages/warehouse.css')
-            );
+        if (is_page('仓库') || (is_singular() && has_shortcode(get_post()->post_content, 'warehouse'))) {
+            error_log('正在尝试加载仓库资源...');
+            
+            // 确保目录存在
+            $css_file = HAP_PLUGIN_DIR . 'assets/css/pages/warehouse.css';
+            $js_file = HAP_PLUGIN_DIR . 'assets/js/warehouse.js';
+            
+            if (file_exists($css_file)) {
+                wp_enqueue_style(
+                    'hap-warehouse',
+                    HAP_PLUGIN_URL . 'assets/css/pages/warehouse.css',
+                    ['hap-layout'],
+                    filemtime($css_file)
+                );
+                error_log('warehouse.css 已加载');
+            } else {
+                error_log('warehouse.css 文件不存在: ' . $css_file);
+            }
 
-            wp_enqueue_script(
-                'hap-warehouse',
-                HAP_PLUGIN_URL . 'assets/js/scripts.js',
-                ['hap-script'],
-                filemtime(HAP_PLUGIN_DIR . 'assets/js/scripts.js'),
-                true
-            );
+            if (file_exists($js_file)) {
+                wp_enqueue_script(
+                    'hap-warehouse',
+                    HAP_PLUGIN_URL . 'assets/js/warehouse.js',
+                    ['jquery'],
+                    filemtime($js_file),
+                    true
+                );
+                error_log('warehouse.js 已加载');
+            } else {
+                error_log('warehouse.js 文件不存在: ' . $js_file);
+            }
+            
+            // 添加必要的 AJAX 数据
+            wp_localize_script('hap-warehouse', 'hap_warehouse', array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('hap-warehouse-nonce'),
+                'is_user_logged_in' => is_user_logged_in()
+            ));
         }
 
         // 管理员后台专用资源

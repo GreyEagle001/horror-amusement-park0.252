@@ -1,112 +1,233 @@
-/**
- * HAP - 惊吓盒子专属样式
- * 包含恐怖主题特效和交互组件
- * 最后更新: 2025-04-24
- */
+/* ===== 惊吓盒子极简主题样式 ===== */
+/* 极简版本 1.0 | 2025-04-27 */
 
-/* ===== 主容器 ===== */
-.hap-shock-container {
-    position: relative;
-    background: radial-gradient(circle at center, #1a0000 0%, #000 100%);
-    border: 2px solid var(--hap-error);
-    border-radius: 0.75rem;
-    overflow: hidden;
-    min-height: 500px;
-    box-shadow: 0 0 30px rgba(139, 0, 0, 0.3);
+/* === 基础变量 === */
+:root {
+  /* 极简配色 */
+  --minimal-bg: #ffffff;
+  --minimal-text: #333333;
+  --minimal-border: #e0e0e0;
+  --minimal-accent: #1a73e8;
+  --minimal-hover: #f5f5f5;
+
+  /* 品质颜色（低饱和度） */
+  --quality-common: #757575;
+  --quality-uncommon: #34a853;
+  --quality-rare: #4285f4;
+  --quality-epic: #9d50e2;
+  --quality-legendary: #fbbc04;
+}
+
+/* === 全局重置 === */
+.hap-shock-box-container {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--minimal-bg);
+  color: var(--minimal-text);
+  padding: 2rem;
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* === 搜索过滤区 === */
+.hap-item-filters {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 0;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--minimal-border);
+  flex-wrap: wrap;
+}
+
+#hap-item-search {
+  flex: 1;
+  min-width: 200px;
+  background: transparent;
+  border: 1px solid var(--minimal-border);
+  color: var(--minimal-text);
+  padding: 0.75rem;
+  font-size: 0.95rem;
+  border-radius: 4px;
+}
+
+#hap-item-search:focus {
+  outline: none;
+  border-color: var(--minimal-accent);
+}
+
+#hap-item-type, 
+#hap-item-quality {
+  min-width: 150px;
+  background: transparent;
+  border: 1px solid var(--minimal-border);
+  color: var(--minimal-text);
+  padding: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#hap-search-btn {
+  background: transparent;
+  border: 1px solid var(--minimal-border);
+  color: var(--minimal-text);
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+#hap-search-btn:hover {
+  background: var(--minimal-hover);
+}
+
+/* === 道具卡片网格 === */
+.hap-items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.hap-item-card {
+  background: transparent;
+  border: 1px solid var(--minimal-border);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  padding: 1.5rem;
+}
+
+.hap-item-card:hover {
+  border-color: var(--minimal-accent);
+}
+
+/* === 卡片内容样式 === */
+.item-header h3 {
+  color: var(--minimal-text);
+  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
+
+.meta-badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.type-badge, 
+.quality-badge, 
+.level-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  background: var(--minimal-hover);
+}
+
+/* 品质边框 */
+.quality-common { border-left: 3px solid var(--quality-common); }
+.quality-uncommon { border-left: 3px solid var(--quality-uncommon); }
+.quality-rare { border-left: 3px solid var(--quality-rare); }
+.quality-epic { border-left: 3px solid var(--quality-epic); }
+.quality-legendary { border-left: 3px solid var(--quality-legendary); }
+
+/* === 核心信息区块 === */
+.item-core {
+  margin: 1.25rem 0;
+  padding: 0;
+}
+
+.effects-badge {
+  margin-bottom: 0.75rem;
+  color: var(--minimal-text);
+  font-size: 0.9rem;
+}
+
+.price-badge {
+  font-size: 1.1rem;
+  color: var(--minimal-text);
+  margin-top: 1rem;
+  font-weight: 500;
+}
+
+/* === 页脚样式 === */
+.item-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--minimal-border);
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.hap-buy-btn {
+  background: transparent;
+  border: 1px solid var(--minimal-accent);
+  color: var(--minimal-accent);
+  padding: 0.6rem 1.25rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.hap-buy-btn:hover {
+  background: rgba(26, 115, 232, 0.08);
+}
+
+/* === 分页控件 === */
+.hap-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--minimal-border);
+}
+
+.hap-pagination button {
+  background: transparent;
+  border: 1px solid var(--minimal-border);
+  color: var(--minimal-text);
+  padding: 0.5rem 0.9rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hap-pagination button:hover:not(.active) {
+  background: var(--minimal-hover);
+}
+
+.hap-pagination button.active {
+  border-color: var(--minimal-accent);
+  color: var(--minimal-accent);
+}
+
+/* === 响应式设计 === */
+@media (max-width: 768px) {
+  .hap-item-filters {
+    flex-direction: column;
   }
   
-  /* ===== 动态血滴背景 ===== */
-  .hap-shock-container::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
+  #hap-item-search, 
+  #hap-item-type, 
+  #hap-item-quality, 
+  #hap-search-btn {
     width: 100%;
-    height: 100%;
-    background-image: 
-      radial-gradient(circle at 20% 30%, rgba(255, 0, 0, 0.1) 1px, transparent 2px),
-      radial-gradient(circle at 80% 70%, rgba(255, 0, 0, 0.1) 1px, transparent 3px);
-    background-size: 100px 100px;
-    animation: hap-blood-drip 15s infinite linear;
   }
   
-  @keyframes hap-blood-drip {
-    0% { background-position: 0 0; }
-    100% { background-position: 100px 100px; }
+  .hap-items-grid {
+    grid-template-columns: 1fr;
   }
-  
-  /* ===== 惊吓盒子标题 ===== */
-  .hap-shock-title {
-    font-family: 'Creepster', cursive;
-    font-size: 3rem;
-    color: #ff4d4d;
-    text-shadow: 
-      0 0 5px #8b0000,
-      0 0 10px #ff0000,
-      0 0 20px #ff4d4d;
-    letter-spacing: 0.5rem;
-    margin-bottom: 2rem;
-    position: relative;
-    z-index: 1;
-  }
-  
-  /* ===== 盒子交互区域 ===== */
-  .hap-shock-box {
-    width: 300px;
-    height: 300px;
-    margin: 0 auto;
-    background: url('../images/shock-box-closed.png') no-repeat center;
-    background-size: contain;
-    cursor: pointer;
-    transition: transform 0.3s;
-    position: relative;
-    z-index: 2;
-  }
-  
-  .hap-shock-box:hover {
-    transform: scale(1.05) rotate(5deg);
-  }
-  
-  .hap-shock-box.active {
-    background-image: url('../images/shock-box-open.png');
-    animation: hap-shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
-  }
-  
-  @keyframes hap-shake {
-    0%, 100% { transform: translateX(0); }
-    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-    20%, 40%, 60%, 80% { transform: translateX(5px); }
-  }
-  
-  /* ===== 惊吓效果 ===== */
-  .hap-jump-scare {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: #000;
-    z-index: 9999;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    opacity: 0;
-    pointer-events: none;
-  }
-  
-  .hap-jump-scare.active {
-    opacity: 1;
-    animation: hap-flash 0.3s;
-  }
-  
-  .hap-jump-scare img {
-    max-width: 80%;
-    max-height: 80%;
-  }
-  
-  @keyframes hap-flash {
-    0% { background-color: #000; }
-    50% { background-color: #ff0000; }
-    100% { background-color: #000; }
-  }
-  
+}
+
+/* === 空状态提示 === */
+.hap-notice {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+  border: 1px dashed var(--minimal-border);
+  border-radius: 6px;
+  margin: 2rem 0;
+}
