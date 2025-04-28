@@ -383,39 +383,177 @@ jQuery(document).ready(function ($) {
           });
       }
     });
+  }
+
+  // 渲染搜索结果
+  function renderSearchResults(response) {
+    const $container = $("#hap-items-container");
+    $container.empty();
     
-    // 购买功能
-    $("#hap-items-container").on("click", ".hap-buy-btn", function(e) {
-      const $btn = $(e.currentTarget);
-      const itemId = $btn.data("item-id");
-      console.log("购买按钮被点击", itemId);
+    if (!response.items || response.items.length === 0) {
+      $container.html('<div class="hap-no-items">没有找到符合条件的商品</div>');
+      return;
+    }
+    
+    const fragment = document.createDocumentFragment();
+    
+    response.items.forEach(item => {
+      const itemEl = document.createElement("div");
+      itemEl.className = `hap-item-card hap-quality-${item.quality || 'common'}`;
       
-      if (!confirm("确定要购买这个商品吗？")) return;
+      itemEl.innerHTML = `
+        <div class="hap-item-image">
+          <img src="${item.image_url || ''}" alt="${escapeHtml(item.name)}" class="hap-item-thumbnail">
+        </div>
+        <div class="hap-item-info">
+          <h4 class="hap-item-name">${escapeHtml(item.name)}</h4>
+          <div class="hap-item-meta">
+            <span class="hap-item-type">类型：${getTypeName(item.item_type)}</span>
+            <span class="hap-item-quality">品质：${getQualityName(item.quality)}</span>
+            <span class="hap-item-price">价格：${item.price} ${getCurrencyName(item.currency)}</span>
+          </div>
+          <div class="hap-item-description">${escapeHtml(item.description || '')}</div>
+        </div>
+        <div class="hap-item-actions">
+          <button class="hap-buy-btn" data-item-id="${item.item_id}">购买</button>
+        </div>
+      `;
       
-      $btn.prop("disabled", true).text("购买中...");
-      
-      $.post(hap_ajax.ajax_url, {
-        action: "hap_buy_item",
-        nonce: hap_ajax.nonce,
-        item_id: itemId
-      })
-      .done(function(response) {
-        if (response.success) {
-          showSuccess("购买成功！");
-          // 刷新页面或更新UI
-          setTimeout(function() {
-            window.location.reload();
-          }, 1500);
-        } else {
-          showError(response.data || "购买失败，请重试");
-        }
-      })
-      .fail(function() {
-        showError("网络错误，请重试");
-      })
-      .always(function() {
-        $btn.prop("disabled", false).text("购买");
-      });
+      fragment.appendChild(itemEl);
     });
+    
+    $container.append(fragment);
+    
+    // 渲染分页
+    if (response.pagination) {
+      renderPagination(response.pagination);
+    }
+  }
+  
+  // 渲染分页
+  function renderPagination(pagination) {
+    const $pagination = $("#hap-pagination");
+    $pagination.empty();
+    
+    if (!pagination || pagination.total_pages <= 1) {
+      return;
+    }
+    
+    const fragment = document.createDocumentFragment();
+    
+    // 上一页
+    if (pagination.current_page > 1) {
+      const prevBtn = document.createElement("button");
+      prevBtn.className = "hap-pagination-btn hap-prev-btn";
+      prevBtn.textContent = "上一页";
+      prevBtn.dataset.page = pagination.current_page - 1;
+      fragment.appendChild(prevBtn);
+    }
+    
+    // 页码
+    for (let i = 1; i <= pagination.total_pages; i++) {
+      if (
+        i === 1 || 
+        i === pagination.total_pages || 
+        (i >= pagination.current_page - 2 && i <= pagination.current_page + 2)
+      ) {
+        const pageBtn = document.createElement("button");
+        pageBtn.className = `hap-pagination-btn ${i === pagination.current_page ? 'active' : ''}`;
+        pageBtn.textContent = i;
+        pageBtn.dataset.page = i;
+        fragment.appendChild(pageBtn);
+      } else if (
+        i === pagination.current_page - 3 || 
+        i === pagination.current_page + 3
+      ) {
+        const ellipsis = document.createElement("span");
+        ellipsis.className = "hap-pagination-ellipsis";
+        ellipsis.textContent = "...";
+        fragment.appendChild(ellipsis);
+      }
+    }
+    
+    // 下一页
+    if (pagination.current_page < pagination.total_pages) {
+      const nextBtn = document.createElement("button");
+      nextBtn.className = "hap-pagination-btn hap-next-btn";
+      nextBtn.textContent = "下一页";
+      nextBtn.dataset.page = pagination.current_page + 1;
+      fragment.appendChild(nextBtn);
+    }
+    
+    $pagination.append(fragment);
+    
+    // 绑定分页点击事件
+    $pagination.on("click", ".hap-pagination-btn", function() {
+      const page = $(this).data("page");
+      if (typeof ShockBox !== 'undefined' && typeof ShockBox.loadItems === 'function') {
+        ShockBox.loadItems(page);
+      } else {
+        // 手动加载指定页面
+        const searchParams = {
+          action: "hap_search_items",
+          nonce: hap_ajax.nonce,
+          name: $("#hap-item-search").val().trim() || undefined,
+          item_type: $("#hap-item-type").val() !== "*" ? $("#hap-item-type").val() : undefined,
+          quality: $("#hap-item-quality").val() !== "*" ? $("#hap-item-quality").val() : undefined,
+          page: page,
+          per_page: 20,
+          fuzzy_search: true
+        };
+        
+        // 清理空参数
+        Object.keys(searchParams).forEach(key => {
+          searchParams[key] === undefined && delete searchParams[key];
+        });
+        
+        $.post(hap_ajax.ajax_url, searchParams)
+          .then(function(response) {
+            if (response.success) {
+              renderSearchResults(response);
+            } else {
+              throw new Error(response.data || "加载失败");
+            }
+          })
+          .catch(function(error) {
+            console.error("分页加载错误:", error);
+            showError(error.message);
+          });
+      }
+    });
+  }
+  
+  // 获取类型名称
+  function getTypeName(type) {
+    const types = {
+      consumable: "消耗道具",
+      permanent: "永久道具",
+      arrow: "箭矢",
+      bullet: "子弹",
+      skill: "法术",
+      equipment: "装备"
+    };
+    return types[type] || type;
+  }
+  
+  // 获取品质名称
+  function getQualityName(quality) {
+    const qualities = {
+      common: "普通",
+      uncommon: "精良",
+      rare: "稀有",
+      epic: "史诗",
+      legendary: "传说"
+    };
+    return qualities[quality] || quality;
+  }
+  
+  // 获取货币名称
+  function getCurrencyName(currency) {
+    const currencies = {
+      game_coin: "游戏币",
+      skill_points: "技巧值"
+    };
+    return currencies[currency] || currency;
   }
 });

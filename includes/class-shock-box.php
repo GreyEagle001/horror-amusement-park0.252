@@ -93,8 +93,8 @@ class HAP_Shock_Box
                 // 3.4 处理空值
                 if ($data) {
                     // 转换特殊字段
-                    $data['attributes'] = $data['attributes'] ? json_decode($data['attributes'], true) : [];
-                    $data['learning_requirements'] = $data['learning_requirements']
+                    $data['attributes'] = isset($data['attributes']) && $data['attributes'] ? json_decode($data['attributes'], true) : [];
+                    $data['learning_requirements'] = isset($data['learning_requirements']) && $data['learning_requirements']
                         ? json_decode($data['learning_requirements'], true)
                         : [];
 

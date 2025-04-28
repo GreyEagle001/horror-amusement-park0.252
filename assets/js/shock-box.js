@@ -45,34 +45,34 @@
         const $btn = $(e.currentTarget);
         const itemId = $btn.data("item-id");
         console.log("购买按钮被点击", itemId);
-  
+      
         if (!confirm("确定要购买这个商品吗？")) return;
-  
+      
         $btn.prop("disabled", true).text("购买中...");
-  
-        this.queueRequest(() => 
-          $.post(hap_ajax.ajax_url, {
-            action: "hap_purchase_item",
-            nonce: hap_ajax.nonce,
-            item_id: itemId,
+      
+        // 直接使用 $.post() 的 Deferred 对象，不经过 queueRequest 的 Promise 包装
+        $.post(hap_ajax.ajax_url, {
+          action: "hap_purchase_item",
+          nonce: hap_ajax.nonce,
+          item_id: itemId,
+        })
+          .then((response) => {
+            if (response?.success) {
+              alert('购买成功！');
+              const currentPage = $("#hap-items-container").data("current-page") || 1;
+              this.loadItems(currentPage);
+            } else {
+              throw new Error(response?.data || "购买失败");
+            }
           })
-        )
-        .then((response) => {
-          if (response.success) {
-            this.showSuccess("购买成功！");
-            const currentPage = $("#hap-items-container").data("current-page") || 1;
-            this.loadItems(currentPage);
-          } else {
-            throw new Error(response.data || "购买失败");
-          }
-        })
-        .catch((error) => {
-          this.showError(error.message);
-        })
-        .finally(() => {
-          $btn.prop("disabled", false).text("购买");
-        });
+          .catch((error) => {
+            this.showError(error.message);
+          })
+          .always(() => {
+            $btn.prop("disabled", false).text("购买");
+          });
       },
+      
   
       /**
        * 加载商品数据（分两阶段）
@@ -135,7 +135,7 @@
               </div>
             `).find(".hap-retry-btn").click(() => this.loadItems(page));
           })
-          .finally(() => {
+          .always(() => {
             $container.data("loading", false);
           });
       },

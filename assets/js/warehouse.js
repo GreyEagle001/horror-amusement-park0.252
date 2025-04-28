@@ -244,6 +244,7 @@ function saveCustomItem() {
   Promise.resolve(jQuery.ajax({
     url: hap_ajax.ajax_url,
     type: 'POST',
+    contentType: "application/x-www-form-urlencoded; charset=UTF-8",
     data: requestData,
     dataType: 'json'
   }))
