@@ -332,16 +332,6 @@
         return currencies[currency] || currency;
       },
   
-      /**
-       * 请求队列管理
-       */
-      queueRequest: function(requestFn) {
-        return new Promise((resolve, reject) => {
-          hapState.pendingRequests.push({ requestFn, resolve, reject });
-          this.processQueue();
-        });
-      },
-  
       processQueue: function() {
         if (hapState.isRequesting || hapState.pendingRequests.length === 0) return;
         
