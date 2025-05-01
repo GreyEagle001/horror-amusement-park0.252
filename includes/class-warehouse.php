@@ -26,6 +26,9 @@ class HAP_Warehouse
         add_action('wp_ajax_hap_get_inventory', [$this, 'ajax_get_inventory']);
         add_action('wp_ajax_hap_save_custom_items', [$this, 'ajax_save_custom_items']);
         add_action('wp_ajax_nopriv_hap_save_custom_items', [$this, 'ajax_save_custom_items']);
+        add_action('wp_ajax_hap_get_custom_items', [$this, 'ajax_get_custom_items']);
+        add_action('wp_ajax_nopriv_hap_get_custom_items', [$this, 'ajax_get_custom_items']);
+        
     }
 
     public function render_warehouse()
@@ -317,15 +320,32 @@ class HAP_Warehouse
 // 后端新增 AJAX 接口
 public function ajax_get_custom_items() {
     global $wpdb;
-    check_ajax_referer('hap-nonce', 'nonce');
-    $items = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}hap_custom_items WHERE user_id = " . get_current_user_id());
-    wp_send_json_success(['items' => $items]);
+    try {
+        check_ajax_referer('hap-nonce', 'nonce');
+        $items = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}hap_custom_items WHERE user_id = " . get_current_user_id());
+        
+        if (is_wp_error($items)) {
+            wp_send_json_error([
+                'message' => '数据库查询失败',
+                'console' => 'Error: Failed to fetch custom items. Check server logs for details.'
+            ]);
+        }
+        wp_send_json_success(['items' => $items]);
+        
+    } catch (Exception $e) {
+        wp_send_json_error([
+            'message' => '服务器异常',
+            'console' => 'Error: ' . $e->getMessage() 
+        ]);
+    }
 }
+
 
     // 辅助方法
 
     private function save_custom_items($args) {
         global $wpdb;
+        
         
         error_log('[HAP][数据库] 开始保存道具数据 '.current_time('mysql'));
         error_log('[HAP][数据库] 接收参数: '.print_r($args, true));
@@ -376,18 +396,22 @@ public function ajax_get_custom_items() {
             );
     
             if (false === $result) {
-                error_log('[HAP][数据库错误] 插入失败: '.$wpdb->last_error);
-                throw new Exception('数据库写入失败');
+                $error_msg = '数据库插入失败: ' . $wpdb->last_error;
+                error_log('[HAP][数据库错误] ' . $error_msg);
+                throw new Exception($error_msg);
             }
     
             return [
                 'item_id'  => $wpdb->insert_id,
-                'view_url' => add_query_arg('item_id', $wpdb->insert_id, home_url('/item-view'))
-            ];
-    
+                'view_url' => add_query_arg('item_id', $wpdb->insert_id, home_url('/item-view')),
+                'console'  => 'Item saved successfully. ID: ' . $wpdb->insert_id // 成功日志（可选）
+            ];    
         } catch (Exception $e) {
-            error_log('[HAP][数据库异常] '.$e->getMessage());
-            throw $e;
+            return [
+                'error'   => true,
+                'message' => $e->getMessage(),
+                'console' => 'Error: ' . $e->getMessage() // 强制输出到前端控制台
+            ];
         }
     }
     

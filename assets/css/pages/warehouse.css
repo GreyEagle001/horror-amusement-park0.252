@@ -1,158 +1,227 @@
 /**
- * HAP - 恐怖仓库专属样式
- * 包含物品网格和库存管理组件
- * 最后更新: 2025-04-24
+ * HAP - 恐怖仓库专属样式 (完整版)
+ * 包含商品道具、自定义道具及仓库布局
+ * 最后更新: 2025-05-01
  */
+
+/* ===== 全局变量 ===== */
+:root {
+  --hap-primary: #8b0000; /* 主红色 */
+  --hap-text: #e0e0e0;   /* 浅色文本 */
+  --hap-error: #ff4d4d;  /* 错误色 */
+}
 
 /* ===== 仓库主布局 ===== */
 .hap-warehouse {
-    display: grid;
-    grid-template-columns: 200px 1fr;
-    gap: 1.5rem;
-    background: #f5f5f5;
-    border: 1px solid #e1e1e1;
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-  }
-  
-  /* ===== 分类侧边栏 ===== */
-  .hap-warehouse-categories {
-    border-right: 1px solid #e1e1e1;
-    padding-right: 1rem;
-  }
-  
-  .hap-category-item {
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.5rem;
-    border-radius: 0.25rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-  }
-  
-  .hap-category-item:hover {
-    background-color: #f0f0f0;
-    color: black;
-  }
-  
-  .hap-category-item.active {
-    background-color: #e1e1e1;
-    font-weight: bold;
-  }
-  
-  .hap-category-item::after {
-    content: "";
-    position: absolute;
-    right: -1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 0;
-    height: 0;
-    border-top: 6px solid transparent;
-    border-bottom: 6px solid transparent;
-    border-left: 6px solid var(--hap-primary);
-    opacity: 0;
-  }
-  
-  .hap-category-item.active::after {
-    opacity: 1;
-  }
-  
-  /* ===== 物品网格 ===== */
-  .hap-items-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 1.25rem;
-  }
-  
-  .hap-item-card {
-    background: #ffffff;
-    border-radius: 0.5rem;
-    padding: 1rem;
-    border: 1px solid #e1e1e1;
-    transition: all 0.3s;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .hap-item-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
-  }
-  
-  .hap-item-card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, rgba(139, 0, 0, 0.1) 0%, transparent 50%);
-  }
-  
-  .hap-item-thumbnail {
-    width: 100%;
-    height: 120px;
-    object-fit: cover;
-    border-radius: 0.25rem;
-    margin-bottom: 0.75rem;
-    border: 1px solid #e1e1e1;
-  }
-  
-  .hap-item-name {
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 0.5rem;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-  
-  /* ===== 物品详情弹窗 ===== */
-  .hap-item-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
-    z-index: 1000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s;
-  }
-  
-  .hap-item-modal.active {
-    opacity: 1;
-    pointer-events: all;
-  }
-  
-  .hap-item-modal-content {
-    background: linear-gradient(to bottom, #2a2a2a 0%, #1a1a1a 100%);
-    width: 90%;
-    max-width: 600px;
-    border-radius: 0.5rem;
-    padding: 2rem;
-    border: 1px solid var(--hap-primary);
-    box-shadow: 0 0 30px rgba(139, 0, 0, 0.5);
-    position: relative;
-  }
-  
-  .hap-item-modal-close {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    font-size: 1.5rem;
-    color: var(--hap-text);
-    cursor: pointer;
-    transition: color 0.2s;
-  }
-  
-  .hap-item-modal-close:hover {
-    color: var(--hap-error);
-  }
-  
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 1.5rem;
+  background: #f5f5f5;
+  border: 1px solid #e1e1e1;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+/* ===== 分类侧边栏 ===== */
+.hap-warehouse-categories {
+  border-right: 1px solid #e1e1e1;
+  padding-right: 1rem;
+}
+
+.hap-category-item {
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.hap-category-item:hover {
+  background-color: #f0f0f0;
+}
+
+.hap-category-item.active {
+  background-color: #e1e1e1;
+  font-weight: bold;
+}
+
+.hap-category-item::after {
+  content: "";
+  position: absolute;
+  right: -1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-left-color: var(--hap-primary);
+  opacity: 0;
+}
+
+.hap-category-item.active::after {
+  opacity: 1;
+}
+
+/* ===== 物品网格容器 ===== */
+.hap-items-grid,
+#hap-custom-item-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.25rem;
+  padding: 1.5rem;
+  background: #f5f5f5;
+  border: 1px solid #e1e1e1;
+  border-radius: 0.5rem;
+}
+
+/* ===== 通用物品卡片样式 ===== */
+.hap-item-card,
+.hap-inventory-item {
+  background: #ffffff;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  border: 1px solid #e1e1e1;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.hap-item-card:hover,
+.hap-inventory-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+}
+
+.hap-item-card::before,
+.hap-inventory-item::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(139, 0, 0, 0.1) 0%, transparent 50%);
+}
+
+/* ===== 缩略图样式 ===== */
+.hap-item-thumbnail,
+.hap-item-image-placeholder {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 0.25rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid #e1e1e1;
+}
+
+.hap-item-image-placeholder {
+  background: #e1e1e1 url("data:image/svg+xml,%3Csvg...") no-repeat center;
+}
+
+/* ===== 文本信息 ===== */
+.hap-item-name,
+.hap-item-info h4 {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 3em;
+}
+
+.hap-item-meta span {
+  display: block;
+  font-size: 0.85rem;
+  color: #666;
+  line-height: 1.4;
+  margin-bottom: 0.3rem;
+}
+
+/* ===== 操作按钮组 ===== */
+.hap-item-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px dashed #e1e1e1;
+}
+
+.hap-item-actions button {
+  flex: 1;
+  padding: 0.4rem 0;
+  background: var(--hap-primary);
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.hap-item-actions button:hover {
+  opacity: 0.9;
+}
+
+/* ===== 品质标识系统 ===== */
+.hap-quality-rare { border-left: 3px solid #4a90e2; }
+.hap-quality-epic { border-left: 3px solid #9c27b0; }
+.hap-quality-legendary { border-left: 3px solid #ff9800; }
+
+/* ===== 空状态提示 ===== */
+.hap-no-items {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem;
+  color: #999;
+  font-size: 1.2rem;
+  background: url("data:image/svg+xml,%3Csvg...") no-repeat center 1rem;
+  background-size: 80px;
+  padding-top: 5rem;
+}
+
+/* ===== 物品详情弹窗 ===== */
+.hap-item-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.hap-item-modal.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.hap-item-modal-content {
+  background: linear-gradient(to bottom, #2a2a2a 0%, #1a1a1a 100%);
+  width: 90%;
+  max-width: 600px;
+  border-radius: 0.5rem;
+  padding: 2rem;
+  border: 1px solid var(--hap-primary);
+  box-shadow: 0 0 30px rgba(139, 0, 0, 0.5);
+  position: relative;
+}
+
+.hap-item-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.5rem;
+  color: var(--hap-text);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.hap-item-modal-close:hover {
+  color: var(--hap-error);
+}

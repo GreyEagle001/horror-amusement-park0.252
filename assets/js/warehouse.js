@@ -12,9 +12,14 @@ jQuery(document).ready(function($) {
     if (tab === "inventory") {
       loadInventory(1);
     }
+    if (tab === "custom") {
+      loadCustomItems();
+    }
   });
 
   loadInventory(1);
+  loadCustomItems();
+  
   
   // 搜索功能
   $("#hap-warehouse-search-btn").on("click", () => {
@@ -270,8 +275,8 @@ if (formEl) formEl.reset();
       jQuery('#hap-custom-item-quality').val('common');
       jQuery('#hap-custom-item-currency').val('game_coin');
       
-      // 可在此处调用刷新逻辑
-      // loadCustomItems();
+      
+      loadCustomItems();
     })
     .catch(error => {
       console.error('保存失败:', error);
@@ -291,8 +296,90 @@ function loadCustomItems() {
       action: 'hap_get_custom_items',
       nonce: hap_ajax.nonce
   }).done(response => {
-      jQuery('#hap-custom-item-container').html(renderItems(response.data.items));
+      jQuery('#hap-custom-item-container').html(renderCustomItems(response.data.items));
   });
+}
+
+function renderCustomItems(items) {
+  const $container = jQuery("#hap-custom-item-container");
+  $container.empty();
+
+  // 空状态处理
+  if (items.length === 0) {
+    $container.html('<div class="hap-no-items">自定义仓库空空如也</div>');
+    return;
+  }
+
+  // 使用文档片段提升性能
+  const fragment = document.createDocumentFragment();
+
+  items.forEach((item) => {
+    const itemEl = document.createElement("div");
+    itemEl.className = `hap-inventory-item hap-quality-${item.quality || "common"}`;
+
+    // 1. 主内容区块（保持与renderFullItems相同的HTML构建模式）
+    itemEl.innerHTML = `
+      <div class="hap-item-image">
+        <div class="hap-item-image-placeholder"></div>
+      </div>
+      <div class="hap-item-info">
+        <h4>${escapeHtml(item.name)}</h4>
+        <div class="hap-item-meta">
+          <span class="hap-item-type">类型：${getTypeName(item.item_type)}</span><br>
+          <span class="hap-item-quality">品质：${getQualityName(item.quality)}</span><br>
+          <span class="hap-item-attributes">属性：${getQualityName(item.attributes)}</span><br>
+          ${
+            item.level != null  // 显式检查 null 和 undefined
+              ? `<span class="hap-item-level">可使用等级：${escapeHtml(item.level)}</span><br>`
+              : ""
+          }            
+          <span class="hap-item-quantity">数量: ${item.quantity || 0}</span><br>
+          <span class="hap-item-restrictions">单格携带数量: ${item.restrictions || 0}</span><br>
+          ${
+            item.effects 
+              ? `<span class="hap-item-effects">特效：${escapeHtml(item.effects)}</span><br>`
+              : ""
+          }
+          ${
+            item.duration != null
+              ? `<span class="hap-item-duration">持续时间：${escapeHtml(item.duration)}</span><br>`
+              : ""
+          }
+          ${
+            item.consumption != null
+              ? `<span class="hap-item-consumption">单次使用消耗：${escapeHtml(item.consumption)}</span><br>`
+              : ""
+          }
+          <span class="hap-item-author">作者：${escapeHtml(item.author)}</span><br>
+          <span class="hap-item-price">购买时价格：${item.purchase_price} ${getCurrencyName(item.currency)}</span><br>
+          ${
+            item.adjust_type != null && item.adjust_date != null
+              ? `<span class="hap-item-adjust">最近调整：于${escapeHtml(item.adjust_date)} ${getAdjustTypeName(item.adjust_type)}</span><br>`
+              : ""
+          }
+        </div>
+      </div>
+    `;
+
+    // 2. 动态交互元素（模仿renderFullItems的页脚构建逻辑）
+    const actionBar = document.createElement("div");
+    actionBar.className = "hap-item-actions";
+    
+    actionBar.innerHTML = `
+      <button class="hap-use-btn" data-item-id="${item.item_id}">使用</button>
+      <button class="hap-sell-btn" data-item-id="${item.item_id}">出售</button>
+      ${
+        item.tradable 
+          ? `<button class="hap-trade-btn" data-item-id="${item.item_id}">交易</button>`
+          : ""
+      }
+    `;
+
+    itemEl.appendChild(actionBar);
+    fragment.appendChild(itemEl);
+  });
+
+  $container.append(fragment);
 }
 
   // 其他辅助函数
