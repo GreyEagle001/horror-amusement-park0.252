@@ -237,6 +237,20 @@ class HAP_Personal_Center
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
+
+            <form id="custom-item-form" method="post">
+                <!-- 注册表单的内容 -->
+            </form>
+
+            <div id="custom-items">
+                <?php foreach ($custom_items as $item): ?>
+                    <div class="hap-item">
+                        <img src="<?php echo esc_url($item['image_url']); ?>" alt="<?php echo esc_attr($item['name']); ?>">
+                        <div class="hap-item-name"><?php echo esc_html($item['name']); ?></div>
+                        <div class="hap-item-quantity"><?php echo esc_html($item['quantity']); ?></div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
         </div>
 <?php
         return ob_get_clean();

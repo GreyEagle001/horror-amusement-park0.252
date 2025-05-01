@@ -50,6 +50,15 @@ if (typeof Promise.prototype.finally === 'undefined') {
   };
 }
 
+function escapeHtml(unsafe) {
+    return unsafe
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+}
+
 function loadInventory(page) {
   const $container = jQuery('#hap-inventory-container');
 
@@ -95,7 +104,7 @@ function loadInventory(page) {
       })
       .catch((error) => {
         const errorMsg = error instanceof Error ? error.message : String(error);
-        $container.html(`<div class="hap-error">${errorMsg}</div>`);
+        $container.html(`<div class="hap-error">出现错误：${errorMsg}</div>`);
       })
       .finally(() => {
         $container.data("loading", false);

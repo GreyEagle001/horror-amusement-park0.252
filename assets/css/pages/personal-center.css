@@ -1,0 +1,30 @@
+#custom-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.hap-item {
+    /* 这里是仓库中的道具样式，例如： */
+    border: 1px solid #e1e1e1;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    text-align: center;
+}
+
+.hap-item img {
+    /* 这里是仓库中的道具图片样式，例如： */
+    max-width: 100%;
+    height: auto;
+}
+
+.hap-item-name {
+    /* 这里是仓库中的道具名称样式，例如： */
+    font-weight: bold;
+    margin-top: 0.5rem;
+}
+
+.hap-item-quantity {
+    /* 这里是仓库中的道具数量样式，例如： */
+    margin-top: 0.5rem;
+} 

@@ -591,6 +591,8 @@ class Horror_Amusement_Park
             true
         );
     }
+
+    wp_enqueue_style('hap-style', HAP_PLUGIN_URL . 'assets/css/style.css', [], HAP_VERSION);
     }
 
     public function check_requirements()
