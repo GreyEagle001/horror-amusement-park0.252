@@ -3,7 +3,7 @@
 /**
  * Plugin Name: 惊悚乐园 - 非盈利二创跑团平台
  * Plugin URI: 
- * Description: 为惊悚乐园网站提供完整的跑团平台功能，包含个人中心、惊吓盒子、仓库等模块
+ * Description: 为惊悚乐园网站提供完整的跑团平台功能。仓库[warehouse],个人中心[personal_center]，惊吓盒子[shock_box]，管理员页面[admin_center]
  * Version: 2.0.0
  * Author: Your Name
  * Author URI: 
@@ -170,6 +170,7 @@ class Horror_Amusement_Park
     {
         global $wpdb;
         $charset_collate = $wpdb->get_charset_collate();
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php'; // 只需加载一次
 
         // 创建 hap_items 表
         $table_name_items = "{$wpdb->prefix}hap_items";
@@ -422,12 +423,6 @@ class Horror_Amusement_Park
         return ($wpdb->last_error === '');
     }
 
-
-    
-
-
-
-
     private function register_roles()
     {
         // 贡献者角色（比默认贡献者更多权限）
@@ -583,9 +578,9 @@ class Horror_Amusement_Park
     if (is_admin()) {
         wp_enqueue_style(
             'hap-admin',
-            HAP_PLUGIN_URL . 'assets/css/admin.css',
+            HAP_PLUGIN_URL . 'assets/css/pages/admin.css',
             ['hap-layout'],
-            filemtime(HAP_PLUGIN_DIR . 'assets/css/admin.css')
+            filemtime(HAP_PLUGIN_DIR . 'assets/css/pages/admin.css')
         );
 
         wp_enqueue_script(

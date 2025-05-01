@@ -229,6 +229,9 @@ class HAP_Item_Manager
         // 检查用户货币是否足够 (需要实现get_user_currency)
         $user_currency = $this->get_user_currency($user_id, $item->currency);
         if ($user_currency < $item->price) {
+            wp_send_json_error(array(
+                'message' => __('货币不足', 'horror-amusement-park')
+            ));
             return new WP_Error('insufficient_funds', '货币不足');
         }
         error_log('完成1.2'); // 调试信息

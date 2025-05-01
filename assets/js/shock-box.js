@@ -62,6 +62,7 @@
               const currentPage = $("#hap-items-container").data("current-page") || 1;
               this.loadItems(currentPage);
             } else {
+              alert(response.data.message);
               throw new Error(response?.data || "购买失败");
             }
           })

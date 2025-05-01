@@ -400,13 +400,13 @@ class HAP_Personal_Center
 
         // 处理基础信息
         $basic_info = [
-            'nickname' => sanitize_text_field($_POST['nickname']),
-            'avatar' => $avatar_id, // 存储附件ID
-            'bio' => sanitize_textarea_field($_POST['bio']),
+            'nickname' => sanitize_text_field($_POST['nickname'] ?? ''),
+            'avatar' => !empty($_POST['avatar_id']) ? intval($_POST['avatar_id']) : 0,
+            'bio' => sanitize_textarea_field($_POST['bio'] ?? ''),
             'completed_scenarios' => array_filter(
                 array_map(
                     'sanitize_text_field',
-                    explode("\n", $_POST['completed_scenarios'])
+                    explode("\n", $_POST['completed_scenarios'] ?? '')
                 )
             )
         ];
@@ -443,6 +443,7 @@ class HAP_Personal_Center
         update_user_meta($user_id, $this->edit_count_meta_key, ($edit_count ? $edit_count + 1 : 1));
 
         wp_send_json_success('个人信息已保存');
+        wp_die();
     }
 
     public function handle_avatar_upload()
@@ -500,6 +501,7 @@ class HAP_Personal_Center
         update_user_meta($user_id, $this->edit_request_meta_key . '_time', current_time('mysql', true));
 
         wp_send_json_success('修改申请已提交');
+        wp_die();
     }
 
     private function can_user_edit($user_id)

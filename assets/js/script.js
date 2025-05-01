@@ -162,8 +162,8 @@ jQuery(document).ready(function ($) {
     hapQueueRequest(() => $.post(hap_ajax.ajax_url, formData))
       .then((response) => {
         if (response.success) {
-          showSuccess("个人信息保存成功！");
-          location.reload(); // 重新加载当前页面，以反映保存后的最新数据。
+          alert("个人信息已保存");
+          location.reload();
         } else {
           throw new Error(response.data || "保存失败");
         }
@@ -236,7 +236,7 @@ jQuery(document).ready(function ($) {
     )
       .then((response) => {
         if (response.success) {
-          showSuccess("申请已提交，请等待管理员审核");
+          alert("申请已提交，请等待管理员审核");
           location.reload();
         } else {
           throw new Error(response.data || "提交失败");
