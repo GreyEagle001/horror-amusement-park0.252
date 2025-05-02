@@ -103,6 +103,7 @@ class Horror_Amusement_Park
             'shock_box'       => HAP_Shock_Box::init(),
             'warehouse'       => HAP_Warehouse::init(),
             'item_registration'=>HAP_Item_Registration::init()
+            
         ];
 
         // 注册自定义用户角色

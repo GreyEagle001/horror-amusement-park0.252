@@ -211,7 +211,7 @@
             
             <section class="item-core">
               ${item.effects ? `<div class="effects-badge">特效：${item.effects}</div>` : ""}
-              ${item.comment ? `<div class="effects-badge">备注：${item.comment}</div>` : ""}
+              ${item.comment ? `<div class="comment-badge">备注：${item.comment}</div>` : ""}
               <div class="price-badge">价格：${item.price}${this.getCurrencyName(item.currency)}</div>
             </section>
           `;

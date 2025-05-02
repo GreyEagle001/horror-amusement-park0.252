@@ -132,9 +132,8 @@
 
 .hap-item-meta span {
   display: block;
-  font-size: 0.85rem;
-  color: #666;
-  line-height: 1.4;
+  font-size: 1rem;
+  color: white;
   margin-bottom: 0.3rem;
 }
 

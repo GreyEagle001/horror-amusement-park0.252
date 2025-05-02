@@ -129,7 +129,6 @@ class HAP_Shock_Box
         return in_array($value, $allowed) ? $value : $allowed[0];
     }
 
-
     public function render_shock_box()
     {
         if (!is_user_logged_in()) {
